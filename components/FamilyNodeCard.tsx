@@ -33,7 +33,7 @@ export default function FamilyNodeCard({
   const content = (
     <div
       onClick={onClickCard}
-      className={`group py-2 w-20 flex flex-col items-center justify-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer relative
+      className={`group py-2 px-1 w-20 sm:w-24 md:w-28 flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer relative bg-transparent rounded-xl
         ${isMainNode && isDeceased ? "grayscale opacity-80" : ""}
       `}
     >
@@ -45,7 +45,7 @@ export default function FamilyNodeCard({
       )}
       {/* 1. Avatar */}
       <div
-        className={`h-9 w-9 rounded-full flex items-center justify-center text-[10px] sm:text-xs text-white overflow-hidden mb-1.5 sm:mb-2 shrink-0 shadow-sm
+        className={`h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center text-[10px] sm:text-xs md:text-sm text-white overflow-hidden mb-1.5 sm:mb-2 shrink-0 shadow-md ring-2 ring-white transition-transform group-hover:scale-105
             ${
               person.gender === "male"
                 ? "bg-sky-700"
@@ -60,8 +60,8 @@ export default function FamilyNodeCard({
             src={person.avatar_url}
             alt={person.full_name}
             className="w-full h-full object-cover"
-            width={32}
-            height={32}
+            width={56}
+            height={56}
           />
         ) : (
           <DefaultAvatar gender={person.gender} />
@@ -69,9 +69,9 @@ export default function FamilyNodeCard({
       </div>
 
       {/* 2. Gender Icon + Name */}
-      <div className="flex items-center justify-center gap-1 w-full px-1 mb-0.5 sm:mb-1">
+      <div className="flex flex-col items-center justify-center gap-1 w-full px-0.5 sm:px-1">
         <span
-          className={`text-xs font-semibold text-center leading-tight line-clamp-2 max-w-[150px] transition-colors ${onClickName ? "text-stone-900 group-hover:text-amber-700" : "text-stone-900"}`}
+          className={`text-[11px] sm:text-xs md:text-sm font-semibold text-center leading-tight line-clamp-2 max-w-[150px] transition-colors ${onClickName ? "text-stone-900 group-hover:text-amber-700 hover:underline" : "text-stone-900"}`}
           title={person.full_name}
           onClick={(e) => {
             if (onClickName) {
@@ -87,7 +87,7 @@ export default function FamilyNodeCard({
 
       {/* 3. Role */}
       {/* {role && (
-        <span className="text-[10px] sm:text-[11px] text-stone-500 font-medium tracking-wide truncate w-full text-center leading-tight mb-0.5">
+        <span className="mt-1 px-2.5 py-0.5 bg-stone-100/80 border border-stone-200 text-stone-500 font-medium tracking-wide w-auto text-center leading-tight rounded-full text-[10px] shadow-sm">
           {role} {note && `(${note})`}
         </span>
       )} */}

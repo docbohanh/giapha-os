@@ -97,7 +97,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div>
+            <div className="flex flex-col gap-3">
               <button
                 type="submit"
                 disabled={loading}
@@ -105,6 +105,13 @@ export default function LoginPage() {
               >
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </button>
+
+              <Link
+                href="/"
+                className="w-full flex justify-center py-2 px-4 border border-stone-300 text-sm font-medium rounded-md text-stone-700 bg-white hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors duration-200"
+              >
+                Trở về trang chủ
+              </Link>
             </div>
           </form>
         </div>

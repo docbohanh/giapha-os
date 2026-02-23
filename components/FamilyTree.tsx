@@ -125,18 +125,18 @@ export default function FamilyTree({
       <li>
         <div className="node-container inline-flex flex-col items-center">
           {/* Main Person & Spouses Row */}
-          <div className="flex gap-0.5 relative z-10 bg-white rounded-xl shadow-sm border border-stone-200/80">
+          <div className="flex relative z-10 bg-white rounded-2xl shadow-md border border-stone-200/80 p-2 sm:p-3 transition-opacity">
             <FamilyNodeCard person={data.person} isMainNode={true} />
 
             {data.spouses.length > 0 && (
               <>
-                <div className="flex items-center justify-center text-xs">
-                  ❤️
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full shadow-sm bg-white border border-stone-200 z-20 flex items-center justify-center text-[10px] sm:text-xs absolute left-1/2 top-6 -translate-x-1/2 sm:top-8">
+                  💍
                 </div>
                 {data.spouses.map((spouseData, idx) => (
-                  <div key={spouseData.person.id} className="flex gap-0.5">
+                  <div key={spouseData.person.id} className="flex relative">
                     {idx > 0 && (
-                      <div className="flex items-center justify-center text-xs">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full shadow-sm bg-white border border-stone-200 z-20 -mx-2 sm:-mx-3 flex items-center justify-center text-[10px] sm:text-xs absolute left-0 top-5 -translate-x-1/2 sm:top-6">
                         +
                       </div>
                     )}
@@ -209,12 +209,12 @@ export default function FamilyTree({
         .css-tree li::before, .css-tree li::after {
           content: '';
           position: absolute; top: 0; right: 50%;
-          border-top: 2px solid #ccc;
+          border-top: 2px solid #cbd5e1;
           width: 50%; height: 30px;
         }
         .css-tree li::after {
           right: auto; left: 50%;
-          border-left: 2px solid #ccc;
+          border-left: 2px solid #cbd5e1;
         }
 
         /* Remove left-right connectors from elements without siblings */
@@ -232,18 +232,18 @@ export default function FamilyTree({
 
         /* Add back the vertical connector to the last nodes */
         .css-tree li:last-child::before {
-          border-right: 2px solid #ccc;
-          border-radius: 0 5px 0 0;
+          border-right: 2px solid #cbd5e1;
+          border-radius: 0 12px 0 0;
         }
         .css-tree li:first-child::after {
-          border-radius: 5px 0 0 0;
+          border-radius: 12px 0 0 0;
         }
 
         /* Downward connectors from parents */
         .css-tree ul ul::before {
           content: '';
           position: absolute; top: 0; left: 50%;
-          border-left: 2px solid #ccc;
+          border-left: 2px solid #cbd5e1;
           width: 0; height: 30px;
         }
       `,
