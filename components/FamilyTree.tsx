@@ -215,12 +215,26 @@ export default function FamilyTree({
         }
 
         /* Remove left-right connectors from elements without siblings */
-        .css-tree li:only-child::after, .css-tree li:only-child::before {
+        .css-tree li:only-child::after {
           display: none;
         }
+        .css-tree li:only-child::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 50%;
+          border-left: 2px solid #d6d3d1;
+          width: 0;
+          height: 30px;
+        }
 
-        /* Remove space from top of single children */
-        .css-tree li:only-child { padding-top: 0; }
+        /* Remove top connector from first child */
+        .css-tree ul:first-child > li {
+          padding-top: 0px;
+        }
+        .css-tree ul:first-child > li::before {
+          display: none;
+        }
 
         /* Remove left connector from first child and right connector from last child */
         .css-tree li:first-child::before, .css-tree li:last-child::after {

@@ -44,12 +44,12 @@ export default function FamilyNodeCard({
       `}
     >
       {isRingVisible && (
-        <div className="absolute top-1/3 -left-2.5 sm:-left-4 size-5 sm:size-6 rounded-full shadow-sm bg-white border border-stone-200 z-20 flex items-center justify-center text-[10px] sm:text-xs">
+        <div className="absolute top-3/12 -left-2.5 sm:-left-4 size-5 sm:size-6 rounded-full shadow-sm bg-white z-20 flex items-center justify-center text-[10px] sm:text-sm">
           💍
         </div>
       )}
       {isPlusVisible && (
-        <div className="absolute top-1/3 -left-2.5 sm:-left-4 size-5 sm:size-6 rounded-full shadow-sm bg-white border border-stone-200 z-20 flex items-center justify-center text-[10px] sm:text-xs">
+        <div className="absolute top-3/12 -left-2.5 sm:-left-4 size-5 sm:size-6 rounded-full shadow-sm bg-white z-20 flex items-center justify-center text-[10px] sm:text-sm">
           +
         </div>
       )}
