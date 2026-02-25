@@ -36,7 +36,7 @@ export default function PersonCard({ person }: PersonCardProps) {
       <div className="flex items-center space-x-4 relative z-10">
         <div className="relative">
           <div
-            className={`h-14 w-14 sm:h-16 sm:w-16 rounded-full flex items-center justify-center text-xl font-bold text-white overflow-hidden shrink-0 shadow-lg ring-2 ring-white transition-transform duration-300 group-hover:scale-105
+            className={`h-14 w-14 sm:h-16 sm:w-16 rounded-[8px] flex items-center justify-center text-xl font-bold text-white overflow-hidden shrink-0 shadow-lg ring-2 ring-white transition-transform duration-300 group-hover:scale-105
             ${person.gender === "male" ? "bg-linear-to-br from-sky-400 to-sky-700" : person.gender === "female" ? "bg-linear-to-br from-rose-400 to-rose-700" : "bg-linear-to-br from-stone-400 to-stone-600"}`}
           >
             {person.avatar_url ? (
@@ -49,7 +49,7 @@ export default function PersonCard({ person }: PersonCardProps) {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <DefaultAvatar gender={person.gender} />
+              <DefaultAvatar gender={person.gender} isDeceased={person.is_deceased} />
             )}
           </div>
           {/* Gender Indicator Icon */}
@@ -101,13 +101,12 @@ export default function PersonCard({ person }: PersonCardProps) {
               )}
               {person.is_in_law && (
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold uppercase tracking-widest shadow-xs border ${
-                    person.gender === "male"
-                      ? "bg-sky-50 text-sky-700 border-sky-200/60"
-                      : person.gender === "female"
-                        ? "bg-rose-50 text-rose-700 border-rose-200/60"
-                        : "bg-stone-50 text-stone-700 border-stone-200/60"
-                  }`}
+                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold uppercase tracking-widest shadow-xs border ${person.gender === "male"
+                    ? "bg-sky-50 text-sky-700 border-sky-200/60"
+                    : person.gender === "female"
+                      ? "bg-rose-50 text-rose-700 border-rose-200/60"
+                      : "bg-stone-50 text-stone-700 border-stone-200/60"
+                    }`}
                 >
                   {person.gender === "male"
                     ? "Rể"

@@ -606,7 +606,7 @@ export default function RelationshipManager({
                       className="flex items-center gap-3 hover:bg-stone-100 p-2.5 -mx-2.5 rounded-xl transition-all duration-200 flex-1 text-left cursor-pointer"
                     >
                       <div
-                        className={`h-8 w-8 rounded-full flex items-center justify-center text-xs text-white overflow-hidden
+                        className={`h-8 w-8 rounded-[8px] flex items-center justify-center text-xs text-white overflow-hidden
                             ${rel.targetPerson.gender === "male" ? "bg-sky-700" : rel.targetPerson.gender === "female" ? "bg-rose-700" : "bg-stone-500"}`}
                       >
                         {rel.targetPerson.avatar_url ? (
@@ -619,7 +619,7 @@ export default function RelationshipManager({
                             height={32}
                           />
                         ) : (
-                          <DefaultAvatar gender={rel.targetPerson.gender} />
+                          <DefaultAvatar gender={rel.targetPerson.gender} isDeceased={rel.targetPerson.is_deceased} />
                         )}
                       </div>
                       <div className="flex flex-col">

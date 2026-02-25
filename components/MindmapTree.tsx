@@ -138,14 +138,13 @@ export default function MindmapTree({
                     {showAvatar && (
                       <div className="relative shrink-0">
                         <div
-                          className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shadow-md ring-2 ring-white transition-transform duration-300 group-hover/card:scale-105
-                      ${
-                        data.person.gender === "male"
-                          ? "bg-linear-to-br from-sky-400 to-sky-700"
-                          : data.person.gender === "female"
-                            ? "bg-linear-to-br from-rose-400 to-rose-700"
-                            : "bg-linear-to-br from-stone-400 to-stone-600"
-                      }`}
+                          className={`w-10 h-10 rounded-[4px] overflow-hidden flex items-center justify-center text-white text-xs font-bold shadow-md ring-2 ring-white transition-transform duration-300 group-hover/card:scale-105
+                      ${data.person.gender === "male"
+                              ? "bg-linear-to-br from-sky-400 to-sky-700"
+                              : data.person.gender === "female"
+                                ? "bg-linear-to-br from-rose-400 to-rose-700"
+                                : "bg-linear-to-br from-stone-400 to-stone-600"
+                            }`}
                         >
                           {data.person.avatar_url ? (
                             <Image
@@ -157,7 +156,7 @@ export default function MindmapTree({
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <DefaultAvatar gender={data.person.gender} />
+                            <DefaultAvatar gender={data.person.gender} isDeceased={data.person.is_deceased} />
                           )}
                         </div>
                       </div>
@@ -199,13 +198,12 @@ export default function MindmapTree({
                           )} */}
                           {data.person.is_in_law && (
                             <span
-                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest shadow-xs border ${
-                                data.person.gender === "male"
-                                  ? "bg-sky-50 text-sky-700 border-sky-200/60"
-                                  : data.person.gender === "female"
-                                    ? "bg-rose-50 text-rose-700 border-rose-200/60"
-                                    : "bg-stone-50 text-stone-700 border-stone-200/60"
-                              }`}
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest shadow-xs border ${data.person.gender === "male"
+                                ? "bg-sky-50 text-sky-700 border-sky-200/60"
+                                : data.person.gender === "female"
+                                  ? "bg-rose-50 text-rose-700 border-rose-200/60"
+                                  : "bg-stone-50 text-stone-700 border-stone-200/60"
+                                }`}
                             >
                               {data.person.gender === "male"
                                 ? "Rể"
@@ -241,14 +239,13 @@ export default function MindmapTree({
                           >
                             {showAvatar && (
                               <div
-                                className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-[10px] font-bold shadow-sm ring-2 ring-white transition-transform duration-300 group-hover/spouse:scale-105
-                          ${
-                            spouseData.person.gender === "male"
-                              ? "bg-linear-to-br from-sky-400 to-sky-700"
-                              : spouseData.person.gender === "female"
-                                ? "bg-linear-to-br from-rose-400 to-rose-700"
-                                : "bg-linear-to-br from-stone-400 to-stone-600"
-                          }`}
+                                className={`w-8 h-8 rounded-[5px] overflow-hidden flex items-center justify-center text-white text-[10px] font-bold shadow-sm ring-2 ring-white transition-transform duration-300 group-hover/spouse:scale-105
+                          ${spouseData.person.gender === "male"
+                                    ? "bg-linear-to-br from-sky-400 to-sky-700"
+                                    : spouseData.person.gender === "female"
+                                      ? "bg-linear-to-br from-rose-400 to-rose-700"
+                                      : "bg-linear-to-br from-stone-400 to-stone-600"
+                                  }`}
                               >
                                 {spouseData.person.avatar_url ? (
                                   <Image
@@ -262,6 +259,7 @@ export default function MindmapTree({
                                 ) : (
                                   <DefaultAvatar
                                     gender={spouseData.person.gender}
+                                    isDeceased={spouseData.person.is_deceased}
                                   />
                                 )}
                               </div>

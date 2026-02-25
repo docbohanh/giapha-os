@@ -52,13 +52,26 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
 
   let finalRootId = rootId;
 
-  // If no rootId is provided, fallback to the earliest created person
+  // Fallback 1: cookie set by admin via "Đặt làm gốc cây" button
+  if (!finalRootId) {
+    const cookieRootId = cookieStore.get("defaultRootId")?.value;
+    if (cookieRootId && personsMap.has(cookieRootId)) {
+      finalRootId = cookieRootId;
+    }
+  }
+
+  // Fallback 2: hardcoded default root, then first person with no parent
   if (!finalRootId || !personsMap.has(finalRootId)) {
-    const rootsFallback = persons.filter((p) => !childIds.has(p.id));
-    if (rootsFallback.length > 0) {
-      finalRootId = rootsFallback[0].id;
-    } else if (persons.length > 0) {
-      finalRootId = persons[0].id; // ultimate fallback
+    const hardcodedDefault = "14d16c52-78dd-4cee-b5a1-f14d0cf426e3";
+    if (personsMap.has(hardcodedDefault)) {
+      finalRootId = hardcodedDefault;
+    } else {
+      const rootsFallback = persons.filter((p) => !childIds.has(p.id));
+      if (rootsFallback.length > 0) {
+        finalRootId = rootsFallback[0].id;
+      } else if (persons.length > 0) {
+        finalRootId = persons[0].id;
+      }
     }
   }
 

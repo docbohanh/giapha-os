@@ -2,11 +2,16 @@
 
 import Image from "next/image";
 
-export default function DefaultAvatar({ gender }: { gender?: string }) {
+interface DefaultAvatarProps {
+  gender?: string;
+  isDeceased?: boolean;
+}
+
+export default function DefaultAvatar({ gender, isDeceased = false }: DefaultAvatarProps) {
   if (gender === "male") {
     return (
       <Image
-        src="/default-male.jpg"
+        src={isDeceased ? "/default-male.jpg" : "/default-male-alive.png"}
         alt="Nam"
         width={64}
         height={64}
@@ -17,7 +22,7 @@ export default function DefaultAvatar({ gender }: { gender?: string }) {
   if (gender === "female") {
     return (
       <Image
-        src="/default-female.jpg"
+        src={isDeceased ? "/default-female.jpg" : "/default-female-alive.png"}
         alt="Nữ"
         width={64}
         height={64}
@@ -25,10 +30,10 @@ export default function DefaultAvatar({ gender }: { gender?: string }) {
       />
     );
   }
-  // Giới tính không xác định — dùng ảnh nam làm fallback
+  // Fallback
   return (
     <Image
-      src="/default-male.jpg"
+      src={isDeceased ? "/default-male.jpg" : "/default-male-alive.png"}
       alt="Mặc định"
       width={64}
       height={64}

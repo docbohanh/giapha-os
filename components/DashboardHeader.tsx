@@ -1,3 +1,4 @@
+import Image from "next/image";
 import config from "@/app/config";
 import HeaderMenu from "@/components/HeaderMenu";
 import Link from "next/link";
@@ -17,7 +18,12 @@ export default function DashboardHeader({
   return (
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-stone-200 shadow-sm transition-all duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Home icon — back to landing page */}
+          <Link href="/" title="Trang chủ" className="shrink-0 transition-transform duration-200 hover:scale-110 active:scale-95">
+            <Image src="/icon.png" alt="Home" width={32} height={32} className="rounded-[6px]" />
+          </Link>
+
           <Link
             href="/dashboard"
             className="group flex items-center gap-2 cursor-pointer"

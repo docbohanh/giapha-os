@@ -72,7 +72,7 @@ export default function FamilyNodeCard({
       {showAvatar && (
         <div className="relative z-10 mb-1.5 sm:mb-2">
           <div
-            className={`h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center text-[10px] sm:text-xs md:text-sm text-white overflow-hidden shrink-0 shadow-lg ring-2 ring-white transition-transform duration-300 group-hover:scale-105
+            className={`h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-[8px] flex items-center justify-center text-[10px] sm:text-xs md:text-sm text-white overflow-hidden shrink-0 shadow-lg ring-2 ring-white transition-transform duration-300 group-hover:scale-105
               ${person.gender === "male"
                 ? "bg-linear-to-br from-sky-400 to-sky-700"
                 : person.gender === "female"
@@ -90,7 +90,7 @@ export default function FamilyNodeCard({
                 height={64}
               />
             ) : (
-              <DefaultAvatar gender={person.gender} />
+              <DefaultAvatar gender={person.gender} isDeceased={person.is_deceased} />
             )}
           </div>
         </div>

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface MemberDetailContentProps {
   person: Person;
@@ -39,6 +39,7 @@ export default function MemberDetailContent({
   const isDeceased =
     !!person.death_year || !!person.death_month || !!person.death_day;
   const pathname = usePathname();
+  const router = useRouter();
   const isModalView = pathname !== `/dashboard/members/${person.id}`;
 
   const containerVariants: Variants = {
@@ -75,14 +76,13 @@ export default function MemberDetailContent({
 
         <motion.div
           variants={itemVariants}
-          className={`absolute -bottom-12 sm:-bottom-16 left-6 sm:left-8 h-24 w-24 sm:h-32 sm:w-32 rounded-full border-4 sm:border-[6px] border-white flex items-center justify-center text-3xl sm:text-4xl font-bold text-white overflow-hidden shadow-xl shrink-0 z-10
-           ${
-             person.gender === "male"
-               ? "bg-linear-to-br from-sky-400 to-sky-700"
-               : person.gender === "female"
-                 ? "bg-linear-to-br from-rose-400 to-rose-700"
-                 : "bg-linear-to-br from-stone-400 to-stone-600"
-           }`}
+          className={`absolute -bottom-12 sm:-bottom-16 left-6 sm:left-8 h-24 w-24 sm:h-32 sm:w-32 rounded-[8px] border-4 sm:border-[6px] border-white flex items-center justify-center text-3xl sm:text-4xl font-bold text-white overflow-hidden shadow-xl shrink-0 z-10
+           ${person.gender === "male"
+              ? "bg-linear-to-br from-sky-400 to-sky-700"
+              : person.gender === "female"
+                ? "bg-linear-to-br from-rose-400 to-rose-700"
+                : "bg-linear-to-br from-stone-400 to-stone-600"
+            }`}
         >
           {person.avatar_url ? (
             <Image
@@ -94,7 +94,7 @@ export default function MemberDetailContent({
               className="h-full w-full object-cover"
             />
           ) : (
-            <DefaultAvatar gender={person.gender} />
+            <DefaultAvatar gender={person.gender} isDeceased={isDeceased} />
           )}
         </motion.div>
       </div>
@@ -114,13 +114,12 @@ export default function MemberDetailContent({
               )}
               {person.is_in_law && (
                 <span
-                  className={`text-[10px] sm:text-xs font-sans font-bold rounded-md px-2 py-0.5 whitespace-nowrap shadow-xs border uppercase tracking-wider ${
-                    person.gender === "female"
-                      ? "text-rose-700 bg-rose-50/50 border-rose-200/60"
-                      : person.gender === "male"
-                        ? "text-sky-700 bg-sky-50/50 border-sky-200/60"
-                        : "text-stone-700 bg-stone-50/50 border-stone-200/60"
-                  }`}
+                  className={`text-[10px] sm:text-xs font-sans font-bold rounded-md px-2 py-0.5 whitespace-nowrap shadow-xs border uppercase tracking-wider ${person.gender === "female"
+                    ? "text-rose-700 bg-rose-50/50 border-rose-200/60"
+                    : person.gender === "male"
+                      ? "text-sky-700 bg-sky-50/50 border-sky-200/60"
+                      : "text-stone-700 bg-stone-50/50 border-stone-200/60"
+                    }`}
                 >
                   {person.gender === "female"
                     ? "Dâu"
@@ -130,6 +129,21 @@ export default function MemberDetailContent({
                 </span>
               )}
             </h1>
+
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  // Persist as default root via cookie (readable server-side)
+                  document.cookie = `defaultRootId=${person.id}; path=/; max-age=31536000; SameSite=Lax`;
+                  router.push(`/dashboard?rootId=${person.id}`);
+                  onLinkClick?.();
+                }}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 hover:bg-amber-100 hover:border-amber-300 transition-colors cursor-pointer shadow-sm"
+                title="Đặt làm gốc mặc định của cây gia phả"
+              >
+                🌳 Đặt làm gốc cây
+              </button>
+            )}
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               {/* Birth Card */}
@@ -154,17 +168,17 @@ export default function MemberDetailContent({
                   {(person.birth_year ||
                     person.birth_month ||
                     person.birth_day) && (
-                    <p className="text-sm font-medium text-stone-500 flex items-center gap-1.5">
-                      <span className="text-[10px] border border-stone-200/60 bg-stone-50/80 rounded px-1.5 py-0.5">
-                        Âm lịch
-                      </span>
-                      {getLunarDateString(
-                        person.birth_year,
-                        person.birth_month,
-                        person.birth_day,
-                      ) || "Chưa rõ"}
-                    </p>
-                  )}
+                      <p className="text-sm font-medium text-stone-500 flex items-center gap-1.5">
+                        <span className="text-[10px] border border-stone-200/60 bg-stone-50/80 rounded px-1.5 py-0.5">
+                          Âm lịch
+                        </span>
+                        {getLunarDateString(
+                          person.birth_year,
+                          person.birth_month,
+                          person.birth_day,
+                        ) || "Chưa rõ"}
+                      </p>
+                    )}
                 </div>
               </motion.div>
 
@@ -191,17 +205,17 @@ export default function MemberDetailContent({
                     {(person.death_year ||
                       person.death_month ||
                       person.death_day) && (
-                      <p className="text-xs font-medium text-stone-500 flex items-center gap-1.5">
-                        <span className="text-[10px] border border-stone-200/60 bg-stone-50/80 rounded px-1.5 py-0.5">
-                          Âm lịch
-                        </span>
-                        {getLunarDateString(
-                          person.death_year,
-                          person.death_month,
-                          person.death_day,
-                        ) || "Chưa rõ"}
-                      </p>
-                    )}
+                        <p className="text-xs font-medium text-stone-500 flex items-center gap-1.5">
+                          <span className="text-[10px] border border-stone-200/60 bg-stone-50/80 rounded px-1.5 py-0.5">
+                            Âm lịch
+                          </span>
+                          {getLunarDateString(
+                            person.death_year,
+                            person.death_month,
+                            person.death_day,
+                          ) || "Chưa rõ"}
+                        </p>
+                      )}
                   </div>
                 </motion.div>
               )}
