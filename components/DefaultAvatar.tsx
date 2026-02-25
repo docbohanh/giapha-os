@@ -6,7 +6,7 @@ export default function DefaultAvatar({ gender }: { gender?: string }) {
   if (gender === "male") {
     return (
       <Image
-        src="/default_male.jpg"
+        src="/default-male.jpg"
         alt="Nam"
         width={64}
         height={64}
@@ -17,7 +17,7 @@ export default function DefaultAvatar({ gender }: { gender?: string }) {
   if (gender === "female") {
     return (
       <Image
-        src="/default_female.jpg"
+        src="/default-female.jpg"
         alt="Nữ"
         width={64}
         height={64}
@@ -28,7 +28,7 @@ export default function DefaultAvatar({ gender }: { gender?: string }) {
   // Giới tính không xác định — dùng ảnh nam làm fallback
   return (
     <Image
-      src="/default_male.jpg"
+      src="/default-male.jpg"
       alt="Mặc định"
       width={64}
       height={64}

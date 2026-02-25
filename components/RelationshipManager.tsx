@@ -79,6 +79,12 @@ export default function RelationshipManager({
   const [newSpouseBirthYear, setNewSpouseBirthYear] = useState("");
   const [newSpouseNote, setNewSpouseNote] = useState("");
 
+  // Quick Add Parent State
+  const [isAddingParent, setIsAddingParent] = useState(false);
+  const [newParentName, setNewParentName] = useState("");
+  const [newParentGender, setNewParentGender] = useState<"male" | "female">("male");
+  const [newParentBirthYear, setNewParentBirthYear] = useState("");
+
   // Fetch relationships
   const fetchRelationships = useCallback(async () => {
     try {
@@ -426,6 +432,61 @@ export default function RelationshipManager({
     }
   };
 
+  const handleQuickAddParent = async () => {
+    if (!newParentName.trim()) {
+      alert("Vui lòng nhập tên Bố/Mẹ.");
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const personPayload: {
+        full_name: string;
+        gender: "male" | "female" | "other";
+        birth_year?: number;
+      } = {
+        full_name: newParentName.trim(),
+        gender: newParentGender,
+      };
+
+      if (newParentBirthYear.trim() !== "") {
+        const year = parseInt(newParentBirthYear);
+        if (!isNaN(year)) personPayload.birth_year = year;
+      }
+
+      // 1. Insert Parent Person
+      const { data: newPersonData, error: insertError } = await supabase
+        .from("persons")
+        .insert(personPayload)
+        .select("id")
+        .single();
+
+      if (insertError || !newPersonData) throw insertError;
+
+      const newParentId = newPersonData.id;
+
+      // 2. Insert biological_child relationship (parent = A, current person = B)
+      const { error: relError } = await supabase.from("relationships").insert({
+        person_a: newParentId,
+        person_b: personId,
+        type: "biological_child",
+      });
+
+      if (relError) throw relError;
+
+      setIsAddingParent(false);
+      setNewParentName("");
+      setNewParentBirthYear("");
+      setNewParentGender("male");
+      fetchRelationships();
+    } catch (err: unknown) {
+      const e = err as Error;
+      alert("Failed to quick add parent: " + e.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleDelete = async (relId: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa mối quan hệ này?")) return;
     try {
@@ -555,7 +616,7 @@ export default function RelationshipManager({
       })}
 
       {/* Add Button (Admin) */}
-      {isAdmin && !isAdding && !isAddingBulk && !isAddingSpouse && (
+      {isAdmin && !isAdding && !isAddingBulk && !isAddingSpouse && !isAddingParent && (
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <button
             onClick={() => setIsAddingBulk(true)}
@@ -570,6 +631,15 @@ export default function RelationshipManager({
           >
             + Thêm Vợ/Chồng
           </button>
+
+          {groupByType("parent").length === 0 && (
+            <button
+              onClick={() => setIsAddingParent(true)}
+              className="flex-1 py-3 border-2 border-dashed border-stone-200 bg-stone-50/50 hover:bg-stone-50 rounded-xl sm:rounded-2xl text-stone-500 font-medium text-sm hover:border-emerald-400 hover:text-emerald-700 transition-all duration-200 cursor-pointer"
+            >
+              + Thêm Bố/Mẹ
+            </button>
+          )}
 
           <button
             onClick={() => setIsAdding(true)}
@@ -657,57 +727,56 @@ export default function RelationshipManager({
                 (searchTerm.length === 0 &&
                   !selectedTargetId &&
                   recentMembers.length > 0)) && (
-                <div className="mt-2 bg-white border border-stone-200 rounded-md shadow-lg max-h-[250px] overflow-y-auto">
-                  <div className="px-3 py-1.5 bg-stone-100 text-[10px] font-bold text-stone-500 uppercase tracking-wide border-b border-stone-200 sticky top-0 z-10">
-                    {searchResults.length > 0
-                      ? "Kết quả tìm kiếm"
-                      : "Thành viên vừa thêm gần đây"}
-                  </div>
-                  {(searchResults.length > 0
-                    ? searchResults
-                    : recentMembers
-                  ).map((p) => (
-                    <div
-                      key={p.id}
-                      onClick={() => {
-                        setSelectedTargetId(p.id);
-                        setSearchTerm(p.full_name);
-                        setSearchResults([]);
-                      }}
-                      className="px-3 py-2 hover:bg-amber-50 cursor-pointer text-sm flex items-center justify-between border-b border-stone-100 last:border-0"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`flex items-center justify-center text-[8px] font-bold w-3 h-3 rounded-full text-white shrink-0
-                               ${
-                                 p.gender === "male"
-                                   ? "bg-sky-500"
-                                   : p.gender === "female"
-                                     ? "bg-rose-500"
-                                     : "bg-stone-400"
-                               }`}
-                        >
-                          {p.gender === "male"
-                            ? "♂"
-                            : p.gender === "female"
-                              ? "♀"
-                              : "?"}
-                        </span>
-                        <span className="font-medium text-stone-800">
-                          {p.full_name}
+                  <div className="mt-2 bg-white border border-stone-200 rounded-md shadow-lg max-h-[250px] overflow-y-auto">
+                    <div className="px-3 py-1.5 bg-stone-100 text-[10px] font-bold text-stone-500 uppercase tracking-wide border-b border-stone-200 sticky top-0 z-10">
+                      {searchResults.length > 0
+                        ? "Kết quả tìm kiếm"
+                        : "Thành viên vừa thêm gần đây"}
+                    </div>
+                    {(searchResults.length > 0
+                      ? searchResults
+                      : recentMembers
+                    ).map((p) => (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setSelectedTargetId(p.id);
+                          setSearchTerm(p.full_name);
+                          setSearchResults([]);
+                        }}
+                        className="px-3 py-2 hover:bg-amber-50 cursor-pointer text-sm flex items-center justify-between border-b border-stone-100 last:border-0"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`flex items-center justify-center text-[8px] font-bold w-3 h-3 rounded-full text-white shrink-0
+                               ${p.gender === "male"
+                                ? "bg-sky-500"
+                                : p.gender === "female"
+                                  ? "bg-rose-500"
+                                  : "bg-stone-400"
+                              }`}
+                          >
+                            {p.gender === "male"
+                              ? "♂"
+                              : p.gender === "female"
+                                ? "♀"
+                                : "?"}
+                          </span>
+                          <span className="font-medium text-stone-800">
+                            {p.full_name}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-stone-400">
+                          {formatDisplayDate(
+                            p.birth_year,
+                            p.birth_month,
+                            p.birth_day,
+                          )}
                         </span>
                       </div>
-                      <span className="text-[10px] text-stone-400">
-                        {formatDisplayDate(
-                          p.birth_year,
-                          p.birth_month,
-                          p.birth_day,
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
               {selectedTargetId && (
                 <p className="text-xs text-green-600 mt-1">
                   Đã chọn: {searchTerm}
@@ -959,6 +1028,91 @@ export default function RelationshipManager({
                   setNewSpouseName("");
                   setNewSpouseBirthYear("");
                   setNewSpouseNote("");
+                }}
+                className="px-4 py-2 sm:py-2.5 bg-white border border-stone-300 text-stone-700 rounded-md sm:rounded-lg text-sm hover:bg-stone-50 transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Add Parent Form (Admin) */}
+      {isAdmin && isAddingParent && (
+        <div className="mt-4 bg-emerald-50/50 p-4 sm:p-5 rounded-xl border border-emerald-200 shadow-sm">
+          <h4 className="font-bold text-emerald-800 mb-3 text-sm">
+            Thêm Nhanh Bố/Mẹ
+          </h4>
+
+          <div className="space-y-3">
+            {/* Gender selector — Nam=Bố, Nữ=Mẹ */}
+            <div>
+              <label className="block text-xs font-medium text-emerald-700 mb-1">
+                Giới tính *
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setNewParentGender("male")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all cursor-pointer ${newParentGender === "male"
+                      ? "bg-sky-600 text-white border-sky-600"
+                      : "bg-white text-stone-500 border-stone-200 hover:border-sky-300"
+                    }`}
+                >
+                  ♂ Nam (Bố)
+                </button>
+                <button
+                  onClick={() => setNewParentGender("female")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all cursor-pointer ${newParentGender === "female"
+                      ? "bg-rose-500 text-white border-rose-500"
+                      : "bg-white text-stone-500 border-stone-200 hover:border-rose-300"
+                    }`}
+                >
+                  ♀ Nữ (Mẹ)
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-emerald-700 mb-1">
+                Họ và Tên *
+              </label>
+              <input
+                type="text"
+                placeholder={newParentGender === "male" ? "Nhập tên Bố..." : "Nhập tên Mẹ..."}
+                value={newParentName}
+                onChange={(e) => setNewParentName(e.target.value)}
+                className="bg-white text-stone-900 placeholder-stone-400 block w-full text-sm rounded-md sm:rounded-lg border-stone-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2 sm:p-2.5 border transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-emerald-700 mb-1">
+                Năm sinh (Tuỳ chọn)
+              </label>
+              <input
+                type="number"
+                placeholder="VD: 1960"
+                value={newParentBirthYear}
+                onChange={(e) => setNewParentBirthYear(e.target.value)}
+                className="bg-white text-stone-900 placeholder-stone-400 block w-full text-sm rounded-md sm:rounded-lg border-stone-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2 sm:p-2.5 border transition-colors"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={handleQuickAddParent}
+                disabled={!newParentName.trim() || processing}
+                className="flex-1 bg-emerald-600 text-white py-2 sm:py-2.5 rounded-md sm:rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                {processing ? "Đang lưu..." : `Lưu ${newParentGender === "male" ? "Bố" : "Mẹ"}`}
+              </button>
+              <button
+                onClick={() => {
+                  setIsAddingParent(false);
+                  setNewParentName("");
+                  setNewParentBirthYear("");
+                  setNewParentGender("male");
                 }}
                 className="px-4 py-2 sm:py-2.5 bg-white border border-stone-300 text-stone-700 rounded-md sm:rounded-lg text-sm hover:bg-stone-50 transition-colors cursor-pointer"
               >
