@@ -10,6 +10,7 @@ import MindmapTree from "./MindmapTree";
 interface GuestTreeSectionProps {
     persons: Person[];
     relationships: Relationship[];
+    isLoggedIn?: boolean;
 }
 
 /**
@@ -20,6 +21,7 @@ interface GuestTreeSectionProps {
 export default function GuestTreeSection({
     persons,
     relationships,
+    isLoggedIn,
 }: GuestTreeSectionProps) {
     const [view, setView] = useState<"tree" | "mindmap">("tree");
 
@@ -125,9 +127,11 @@ export default function GuestTreeSection({
                 <div className="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-white/90 to-transparent pointer-events-none" />
             </div>
 
-            <p className="text-center text-xs text-stone-400 mt-2 italic">
-                Đăng nhập để xem chi tiết và chỉnh sửa thông tin
-            </p>
+            {!isLoggedIn && (
+                <p className="text-center text-xs text-stone-400 mt-2 italic">
+                    Đăng nhập để xem chi tiết và chỉnh sửa thông tin
+                </p>
+            )}
         </div>
     );
 }

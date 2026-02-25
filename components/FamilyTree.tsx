@@ -25,6 +25,9 @@ export default function FamilyTree({
   const hasDraggedRef = useRef(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [scrollStart, setScrollStart] = useState({ left: 0, top: 0 });
+  const [scale, setScale] = useState(1);
+  const MIN_SCALE = 0.3;
+  const MAX_SCALE = 2;
 
   useEffect(() => {
     // Center the scroll area horizontally on initial render
@@ -78,6 +81,17 @@ export default function FamilyTree({
       hasDraggedRef.current = false;
     }
   };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!e.ctrlKey && !e.metaKey) return; // only zoom on Ctrl+scroll or pinch
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, +(s + delta).toFixed(2))));
+  };
+
+  const zoomIn = () => setScale((s) => Math.min(MAX_SCALE, +(s + 0.1).toFixed(2)));
+  const zoomOut = () => setScale((s) => Math.max(MIN_SCALE, +(s - 0.1).toFixed(2)));
+  const resetZoom = () => setScale(1);
 
   // Helper function to resolve tree connections for a person
   const getTreeData = (personId: string) => {
@@ -196,14 +210,33 @@ export default function FamilyTree({
   return (
     <div
       ref={containerRef}
-      className={`w-full overflow-auto bg-stone-50 ${isPressed ? "cursor-grabbing" : "cursor-grab"}`}
+      className={`w-full overflow-auto bg-stone-50 relative ${isPressed ? "cursor-grabbing" : "cursor-grab"}`}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUpOrLeave}
       onMouseLeave={handleMouseUpOrLeave}
       onClickCapture={handleClickCapture}
+      onWheel={handleWheel}
       onDragStart={(e) => e.preventDefault()} // Prevent browser default dragging of links/images
     >
+      {/* Zoom controls */}
+      <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-xl shadow-sm px-2 py-1">
+        <button
+          onClick={zoomOut}
+          className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
+          title="Thu nhỏ"
+        >−</button>
+        <button
+          onClick={resetZoom}
+          className="px-1.5 h-6 flex items-center justify-center text-xs font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer min-w-[40px]"
+          title="Đặt lại"
+        >{Math.round(scale * 100)}%</button>
+        <button
+          onClick={zoomIn}
+          className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
+          title="Phóng to"
+        >+</button>
+      </div>
       {/* We use a style block to inject the CSS logic for the family tree lines */}
       <style
         dangerouslySetInnerHTML={{
@@ -290,6 +323,7 @@ export default function FamilyTree({
       <div
         id="export-container"
         className={`w-max min-w-full mx-auto p-4 css-tree transition-opacity duration-200 ${isDragging ? "opacity-90" : ""}`}
+        style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
       >
         <ul>
           {roots.map((root) => (
