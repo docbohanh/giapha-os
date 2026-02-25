@@ -492,6 +492,26 @@ export default function RelationshipManager({
 
   const handleReorderChild = async (relId: string, direction: "up" | "down") => {
     const children = groupByType("child");
+
+    // If any child lacks sort_order, initialize all sequentially first (gap of 10)
+    const hasNulls = children.some((c) => c.sort_order == null);
+    if (hasNulls) {
+      try {
+        await Promise.all(
+          children.map((child, i) =>
+            supabase
+              .from("relationships")
+              .update({ sort_order: i * 10 })
+              .eq("id", child.id),
+          ),
+        );
+        fetchRelationships();
+      } catch (err) {
+        console.error("Failed to initialize sort_order:", err);
+      }
+      return; // User clicks again to actually move
+    }
+
     const idx = children.findIndex((r) => r.id === relId);
     if (idx < 0) return;
     const swapIdx = direction === "up" ? idx - 1 : idx + 1;
@@ -499,13 +519,17 @@ export default function RelationshipManager({
 
     const current = children[idx];
     const swap = children[swapIdx];
-    const currentOrder = current.sort_order ?? idx;
-    const swapOrder = swap.sort_order ?? swapIdx;
 
     try {
       await Promise.all([
-        supabase.from("relationships").update({ sort_order: swapOrder }).eq("id", current.id),
-        supabase.from("relationships").update({ sort_order: currentOrder }).eq("id", swap.id),
+        supabase
+          .from("relationships")
+          .update({ sort_order: swap.sort_order })
+          .eq("id", current.id),
+        supabase
+          .from("relationships")
+          .update({ sort_order: current.sort_order })
+          .eq("id", swap.id),
       ]);
       fetchRelationships();
     } catch (err) {

@@ -96,11 +96,19 @@ export default function FamilyTree({
       })
       .filter((s) => s.person);
 
-    const childRels = relationships.filter(
-      (r) =>
-        (r.type === "biological_child" || r.type === "adopted_child") &&
-        r.person_a === personId,
-    );
+    const childRels = relationships
+      .filter(
+        (r) =>
+          (r.type === "biological_child" || r.type === "adopted_child") &&
+          r.person_a === personId,
+      )
+      .sort((a, b) => {
+        // Sort by sort_order ASC, nulls last
+        if (a.sort_order == null && b.sort_order == null) return 0;
+        if (a.sort_order == null) return 1;
+        if (b.sort_order == null) return -1;
+        return a.sort_order - b.sort_order;
+      });
 
     const childrenList = childRels
       .map((r) => personsMap.get(r.person_b))
