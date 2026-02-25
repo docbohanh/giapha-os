@@ -21,6 +21,7 @@ interface EnrichedRelationship {
   direction: "parent" | "child" | "spouse" | "child_in_law";
   targetPerson: Person;
   note: string | null;
+  sort_order?: number | null;
 }
 
 export default function RelationshipManager({
@@ -117,6 +118,7 @@ export default function RelationshipManager({
           direction,
           targetPerson: r.target,
           note: r.note,
+          sort_order: (r as { sort_order?: number | null }).sort_order ?? null,
         });
       });
 
@@ -133,6 +135,7 @@ export default function RelationshipManager({
           direction,
           targetPerson: r.target,
           note: r.note,
+          sort_order: (r as { sort_order?: number | null }).sort_order ?? null,
         });
       });
 
@@ -487,6 +490,29 @@ export default function RelationshipManager({
     }
   };
 
+  const handleReorderChild = async (relId: string, direction: "up" | "down") => {
+    const children = groupByType("child");
+    const idx = children.findIndex((r) => r.id === relId);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= children.length) return;
+
+    const current = children[idx];
+    const swap = children[swapIdx];
+    const currentOrder = current.sort_order ?? idx;
+    const swapOrder = swap.sort_order ?? swapIdx;
+
+    try {
+      await Promise.all([
+        supabase.from("relationships").update({ sort_order: swapOrder }).eq("id", current.id),
+        supabase.from("relationships").update({ sort_order: currentOrder }).eq("id", swap.id),
+      ]);
+      fetchRelationships();
+    } catch (err) {
+      console.error("Reorder failed:", err);
+    }
+  };
+
   const handleDelete = async (relId: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa mối quan hệ này?")) return;
     try {
@@ -502,8 +528,19 @@ export default function RelationshipManager({
     }
   };
 
-  const groupByType = (type: string) =>
-    relationships.filter((r) => r.direction === type);
+  const groupByType = (type: string) => {
+    const items = relationships.filter((r) => r.direction === type);
+    if (type === "child") {
+      // Sort by sort_order ASC, nulls last (preserve insertion order for nulls)
+      return [...items].sort((a, b) => {
+        if (a.sort_order == null && b.sort_order == null) return 0;
+        if (a.sort_order == null) return 1;
+        if (b.sort_order == null) return -1;
+        return a.sort_order - b.sort_order;
+      });
+    }
+    return items;
+  };
 
   if (loading)
     return (
@@ -578,30 +615,59 @@ export default function RelationshipManager({
                       </div>
                     </button>
                     {isAdmin && rel.direction !== "child_in_law" && (
-                      <button
-                        onClick={() => handleDelete(rel.id)}
-                        className="text-stone-300 hover:text-red-500 hover:bg-red-50 p-2 sm:p-2.5 rounded-lg transition-colors flex items-center justify-center ml-2 cursor-pointer"
-                        title="Xóa mối quan hệ"
-                        aria-label="Xóa mối quan hệ"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                      <div className="flex items-center gap-1 ml-2">
+                        {/* Reorder buttons — only for children */}
+                        {rel.direction === "child" && (() => {
+                          const children = groupByType("child");
+                          const idx = children.findIndex((r) => r.id === rel.id);
+                          return (
+                            <div className="flex flex-col gap-0.5">
+                              <button
+                                onClick={() => handleReorderChild(rel.id, "up")}
+                                disabled={idx === 0}
+                                className="text-stone-300 hover:text-amber-600 hover:bg-amber-50 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+                                title="Lên"
+                              >
+                                ▲
+                              </button>
+                              <button
+                                onClick={() => handleReorderChild(rel.id, "down")}
+                                disabled={idx === children.length - 1}
+                                className="text-stone-300 hover:text-amber-600 hover:bg-amber-50 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+                                title="Xuống"
+                              >
+                                ▼
+                              </button>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Delete button */}
+                        <button
+                          onClick={() => handleDelete(rel.id)}
+                          className="text-stone-300 hover:text-red-500 hover:bg-red-50 p-2 sm:p-2.5 rounded-lg transition-colors flex items-center justify-center cursor-pointer"
+                          title="Xóa mối quan hệ"
+                          aria-label="Xóa mối quan hệ"
                         >
-                          <path d="M3 6h18" />
-                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                          <line x1="10" x2="10" y1="11" y2="17" />
-                          <line x1="14" x2="14" y1="11" y2="17" />
-                        </svg>
-                      </button>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            <line x1="10" x2="10" y1="11" y2="17" />
+                            <line x1="14" x2="14" y1="11" y2="17" />
+                          </svg>
+                        </button>
+                      </div>
                     )}
                   </li>
                 ))}
@@ -1055,8 +1121,8 @@ export default function RelationshipManager({
                 <button
                   onClick={() => setNewParentGender("male")}
                   className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all cursor-pointer ${newParentGender === "male"
-                      ? "bg-sky-600 text-white border-sky-600"
-                      : "bg-white text-stone-500 border-stone-200 hover:border-sky-300"
+                    ? "bg-sky-600 text-white border-sky-600"
+                    : "bg-white text-stone-500 border-stone-200 hover:border-sky-300"
                     }`}
                 >
                   ♂ Nam (Bố)
@@ -1064,8 +1130,8 @@ export default function RelationshipManager({
                 <button
                   onClick={() => setNewParentGender("female")}
                   className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all cursor-pointer ${newParentGender === "female"
-                      ? "bg-rose-500 text-white border-rose-500"
-                      : "bg-white text-stone-500 border-stone-200 hover:border-rose-300"
+                    ? "bg-rose-500 text-white border-rose-500"
+                    : "bg-white text-stone-500 border-stone-200 hover:border-rose-300"
                     }`}
                 >
                   ♀ Nữ (Mẹ)

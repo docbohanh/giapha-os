@@ -126,22 +126,35 @@ export default function FamilyTree({
         <div className="node-container inline-flex flex-col items-center">
           {/* Main Person & Spouses Row */}
           <div className="flex relative z-10 bg-white rounded-2xl shadow-md border border-stone-200/80 transition-opacity">
+            {/* When ≥2 spouses: first spouse goes LEFT of main person */}
+            {data.spouses.length >= 2 && (
+              <div className="flex relative">
+                <FamilyNodeCard
+                  isRingVisible={true}
+                  isRingOnRight={true}
+                  person={data.spouses[0].person}
+                  role={data.spouses[0].person.gender === "male" ? "Chồng" : "Vợ"}
+                  note={data.spouses[0].note}
+                />
+              </div>
+            )}
+
             <FamilyNodeCard person={data.person} isMainNode={true} />
 
             {data.spouses.length > 0 && (
               <>
-                {/* <div className="mt-6 w-5 h-5 sm:w-6 sm:h-6 rounded-full shadow-sm bg-white border border-stone-200 z-20 flex items-center justify-center text-[10px] sm:text-xs">
-                  💍
-                </div> */}
-                {data.spouses.map((spouseData, idx) => (
+                {/* For 1 spouse: render as before (right side, ring on left) */}
+                {/* For ≥2 spouses : render from index 1 onwards on the right */}
+                {(data.spouses.length >= 2
+                  ? data.spouses.slice(1)
+                  : data.spouses
+                ).map((spouseData, idx) => (
                   <div key={spouseData.person.id} className="flex relative">
                     <FamilyNodeCard
-                      isRingVisible={idx === 0}
-                      isPlusVisible={idx > 0}
+                      isRingVisible={idx === 0 && data.spouses.length === 1}
+                      isPlusVisible={idx === 0 && data.spouses.length >= 2 ? true : idx > 0}
                       person={spouseData.person}
-                      role={
-                        spouseData.person.gender === "male" ? "Chồng" : "Vợ"
-                      }
+                      role={spouseData.person.gender === "male" ? "Chồng" : "Vợ"}
                       note={spouseData.note}
                     />
                   </div>

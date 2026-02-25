@@ -16,6 +16,7 @@ interface FamilyNodeCardProps {
   isExpandable?: boolean;
   isExpanded?: boolean;
   isRingVisible?: boolean;
+  isRingOnRight?: boolean; // Position ring on right side (when card is left of main person)
   isPlusVisible?: boolean;
 }
 
@@ -27,6 +28,7 @@ export default function FamilyNodeCard({
   isExpandable = false,
   isExpanded = false,
   isRingVisible = false,
+  isRingOnRight = false,
   isPlusVisible = false,
 }: FamilyNodeCardProps) {
   const { showAvatar, setMemberModalId } = useDashboard();
@@ -41,7 +43,7 @@ export default function FamilyNodeCard({
       `}
     >
       {isRingVisible && (
-        <div className="absolute top-3/12 -left-2.5 sm:-left-4 size-5 sm:size-6 rounded-full shadow-sm bg-white z-20 flex items-center justify-center text-[10px] sm:text-sm">
+        <div className={`absolute top-3/12 size-5 sm:size-6 rounded-full shadow-sm bg-white z-20 flex items-center justify-center text-[10px] sm:text-sm ${isRingOnRight ? "-right-2.5 sm:-right-4" : "-left-2.5 sm:-left-4"}`}>
           💍
         </div>
       )}

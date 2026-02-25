@@ -52,6 +52,7 @@ export interface Relationship {
   person_a: string; // UUID
   person_b: string; // UUID
   note?: string | null;
+  sort_order?: number | null;
   created_at: string;
 }
 
