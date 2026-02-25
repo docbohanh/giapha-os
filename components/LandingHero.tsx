@@ -5,10 +5,11 @@ import {
   ArrowRight,
   Network,
   ShieldCheck,
-  Sparkles,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -30,6 +31,57 @@ const staggerContainer: Variants = {
   },
 };
 
+function FamilyHistoryExcerpt() {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="max-w-3xl mx-auto text-left space-y-4 text-sm sm:text-base text-stone-600 leading-relaxed bg-white/60 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-stone-200/60">
+      <p className="font-semibold text-amber-800 italic">
+        TRÍCH ĐOẠN GIA PHẢ HỌ LÃ HỮU
+      </p>
+      <p>
+        Nguồn gốc họ Lã Hữu qua tìm hiểu văn bia, truyền khẩu và giấy tờ Gia Phả để lại thì khoảng cuối thế kỷ 16 thủy tổ họ Lã đã có mặt trên đất Yên Liêu, đến đời thứ 3 không ghi được hết. Theo gia phả để lại viễn tổ họ Lã là cụ Lã Hữu Giữa, sinh hạ được cụ Lã Hữu Điền. Cụ Lã Hữu Điền sinh được 2 nam (Lã Hữu Lý, Lã Hữu Khu) và 2 nữ.
+      </p>
+
+      {/* Expandable content */}
+      {expanded && (
+        <>
+          <p>
+            Sinh thời cụ Lã Hữu Lý được Triều đình nhà Lê thụ phong chức Thủ Hợp, cụ lấy bà Lã Thị Tại, con cụ Lã Hữu Kim làm Tri phủ Đồng Tiêu. Ông bà sinh hạ được 9 người con, kinh tế gia đình khá giả.
+          </p>
+          <p>
+            Năm Mậu Tuất 1778 mất mùa, lại chiến tranh, dân tình thiếu thốn đói rét, một số người chết. Gia đình đã dành dụm cứu đói bà con trong thôn ấp, cùng lúc đó gia đình thường mua ván giúp đỡ những người chết không nơi nương tựa.
+          </p>
+          <p>
+            Năm 1788 Vua Quang Trung tấn công ra Bắc, lúc đó một số người chịu ơn vua Lê tìm cách chống lại. Một người tên Sáu người Hà Dương, Hà Trung, Thanh Hóa có âm mưu chống lại nhà Tây Sơn và lẩn trốn ở nhà bố vợ quê ngoại làng Yên Liêu để ẩn dật. Sau này quân Tây Sơn bắt được ở sông Vân Sàng, đồng thời về làng bắt thêm 3 người nữa để tra xét.
+          </p>
+          <p>
+            Cụ Lã Hữu Lý nguyên Thủ Hợp, ông Dương Thị Hoàn làm tri sự, ông Lã Đình Thức là lão thành, bị bắt đem đi tra khảo. Sau một thời gian hai ông được tha về rồi mất. Riêng cụ Lã Hữu Lý còn tại giam đến ngày 04/12/1789 (âm lịch). Cụ bị đánh đập và hy sinh trong nhà tù. Dân làng biết được tin này họp lại để nhớ ơn 3 cụ chịu đòn oan và đề nghị cấp trên minh xét.
+          </p>
+          <p>
+            Cụ Lê Đình Thức và cụ Dương Thị Hoàn vì dân mà chịu đòn tan được dân làng trông coi vợ con một đời. Còn cụ Lã Hữu Lý được dân làng, cấp trên xét là người có đức, có nhân, giúp người đói khổ, chịu đòn oan lúc cần chiến sự. Cụ được phong hai chữ: <strong className="text-stone-800">"Hậu Thần"</strong>.
+          </p>
+          <p className="font-semibold text-amber-800 italic">
+            Hậu Thần làng sống Tết chết Giỗ.
+          </p>
+          <div className="pt-4 border-t border-amber-200/60">
+            <p className="text-center text-base sm:text-lg font-bold text-amber-800 leading-snug">
+              ✦ Trải qua hơn 300 năm, Tổ tiên dòng họ Lã Hữu trồng đức trồng nhân, đời này qua đời khác uống nước nhớ nguồn! ✦
+            </p>
+          </div>
+        </>
+      )}
+
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+      >
+        {expanded ? "Thu gọn ↑" : "Xem thêm ↓"}
+      </button>
+    </div>
+  );
+}
+
 interface LandingHeroProps {
   siteName: string;
 }
@@ -49,21 +101,24 @@ export default function LandingHero({ siteName }: LandingHeroProps) {
         >
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-amber-800 bg-white/60 backdrop-blur-md rounded-full shadow-[0_2px_10px_-3px_rgba(0,0,0,0.1)] border border-amber-200/50 relative overflow-hidden group"
+            className="relative overflow-hidden rounded-2xl group w-full max-w-2xl"
           >
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            Nền tảng gia phả hiện đại & bảo mật
-            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+            <Image
+              src="/lahuutoc_ok.png"
+              alt="La Hữu Tộc"
+              width={640}
+              height={320}
+              className="object-contain w-full h-auto"
+              priority
+            />
+            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
           </motion.div>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5rem] font-serif font-bold text-stone-900 tracking-tight leading-[1.1] max-w-4xl">
+          {/* <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5rem] font-serif font-bold text-stone-900 tracking-tight leading-[1.1] max-w-4xl">
             <span className="block">{siteName}</span>
-          </h1>
+          </h1> */}
 
-          <p className="text-lg sm:text-xl md:text-2xl text-stone-600 max-w-2xl mx-auto leading-relaxed font-light">
-            Gìn giữ và lưu truyền những giá trị, cội nguồn và truyền thống tốt
-            đẹp của dòng họ cho các thế hệ mai sau.
-          </p>
+          <FamilyHistoryExcerpt />
         </motion.div>
 
         <motion.div
@@ -78,13 +133,13 @@ export default function LandingHero({ siteName }: LandingHeroProps) {
             className="group inline-flex items-center justify-center gap-2 px-8 py-4 sm:px-10 sm:py-5 text-base sm:text-lg font-bold text-white bg-stone-900 border border-stone-800 hover:bg-stone-800 hover:border-stone-700 rounded-2xl shadow-xl shadow-stone-900/10 hover:shadow-2xl hover:shadow-stone-900/20 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 cursor-pointer w-full sm:w-auto overflow-hidden relative"
           >
             <span className="relative z-10 flex items-center gap-3">
-              Đăng nhập để xem thông tin
+              Đăng nhập để sửa thông tin
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
             </span>
           </Link>
         </motion.div>
 
-        <motion.div
+        {/* <motion.div
           className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-left  border-t border-stone-200/50 relative"
           variants={staggerContainer}
         >
@@ -98,11 +153,6 @@ export default function LandingHero({ siteName }: LandingHeroProps) {
               icon: <Network className="w-6 h-6 text-amber-700" />,
               title: "Sơ đồ Sáng tạo",
               desc: "Xem trực quan sơ đồ phả hệ, thế hệ và mối quan hệ gia đình với giao diện cây hiện đại, dễ thao tác.",
-            },
-            {
-              icon: <ShieldCheck className="w-6 h-6 text-amber-700" />,
-              title: "Bảo mật Tối đa",
-              desc: "Dữ liệu riêng tư như số điện thoại, quê quán được phân quyền chặt chẽ, bảo vệ an toàn trên hệ thống đám mây.",
             },
           ].map((feature, idx) => (
             <motion.div
@@ -124,7 +174,7 @@ export default function LandingHero({ siteName }: LandingHeroProps) {
               </p>
             </motion.div>
           ))}
-        </motion.div>
+        </motion.div> */}
       </motion.div>
     </>
   );
