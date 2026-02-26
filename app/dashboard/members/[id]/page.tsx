@@ -25,11 +25,12 @@ export default async function MemberDetailPage({ params }: PageProps) {
   // Check role
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_active")
     .eq("id", user.id)
     .single();
 
   const isAdmin = profile?.role === "admin";
+  const isUser = !!profile?.is_active;
 
   // Fetch Person Public Data
   const { data: person, error } = await supabase
@@ -88,6 +89,7 @@ export default async function MemberDetailPage({ params }: PageProps) {
             person={person}
             privateData={privateData}
             isAdmin={isAdmin}
+            isUser={isUser}
           />
         </div>
       </main>

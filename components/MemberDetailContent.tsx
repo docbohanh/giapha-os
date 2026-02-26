@@ -8,27 +8,31 @@ import {
   formatDisplayDate,
   getLunarDateString,
 } from "@/utils/dateHelpers";
-import { setDefaultRootNode } from "@/app/actions/member";
+import { setDefaultRootNode, updateMemberNote } from "@/app/actions/member";
 import { motion, Variants } from "framer-motion";
 import {
   Briefcase,
+  Check,
   ExternalLink,
   Info,
   Leaf,
   Loader2,
   MapPin,
+  Pencil,
   Phone,
   Users,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 
 interface MemberDetailContentProps {
   person: Person;
   privateData: Record<string, unknown> | null;
   isAdmin: boolean;
+  isUser?: boolean;
   onLinkClick?: () => void;
 }
 
@@ -36,6 +40,7 @@ export default function MemberDetailContent({
   person,
   privateData,
   isAdmin,
+  isUser = false,
   onLinkClick,
 }: MemberDetailContentProps) {
   const fullPerson = { ...person, ...privateData };
@@ -46,6 +51,26 @@ export default function MemberDetailContent({
   const isModalView = pathname !== `/dashboard/members/${person.id}`;
   const [isPending, startTransition] = useTransition();
   const isCurrentRoot = !!person.is_default_root_node;
+
+  // Note editing state
+  const canEditNote = isAdmin || isUser;
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [noteValue, setNoteValue] = useState(person.note ?? "");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
+
+  const handleSaveNote = async () => {
+    setNoteSaving(true);
+    setNoteError(null);
+    try {
+      await updateMemberNote(person.id, noteValue);
+      setIsEditingNote(false);
+    } catch (err) {
+      setNoteError((err as Error).message || "Lỗi khi lưu ghi chú.");
+    } finally {
+      setNoteSaving(false);
+    }
+  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -282,15 +307,66 @@ export default function MemberDetailContent({
               <h2 className="text-base sm:text-lg font-bold text-stone-800 mb-4 flex items-center gap-2">
                 <Info className="w-5 h-5 text-amber-600" />
                 Ghi chú
+                {canEditNote && !isEditingNote && (
+                  <button
+                    onClick={() => setIsEditingNote(true)}
+                    className="ml-auto flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 rounded-lg hover:bg-amber-100 transition-colors"
+                    title="Chỉnh sửa ghi chú"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Sửa
+                  </button>
+                )}
               </h2>
               <div className="bg-white/80 backdrop-blur-sm p-5 sm:p-6 rounded-2xl border border-stone-200/60 shadow-sm">
-                <p className="text-stone-600 whitespace-pre-wrap text-sm sm:text-base leading-relaxed">
-                  {(fullPerson.note as string) || (
-                    <span className="text-stone-400 italic">
-                      Chưa có ghi chú.
-                    </span>
-                  )}
-                </p>
+                {isEditingNote ? (
+                  <div className="space-y-3">
+                    <textarea
+                      value={noteValue}
+                      onChange={(e) => setNoteValue(e.target.value)}
+                      rows={5}
+                      autoFocus
+                      placeholder="Nhập ghi chú về thành viên..."
+                      className="w-full text-sm text-stone-700 leading-relaxed bg-stone-50/80 border border-stone-200 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                    />
+                    {noteError && (
+                      <p className="text-xs text-red-600 font-medium">{noteError}</p>
+                    )}
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        onClick={() => {
+                          setIsEditingNote(false);
+                          setNoteValue(person.note ?? "");
+                          setNoteError(null);
+                        }}
+                        disabled={noteSaving}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg border border-stone-200 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" /> Huỷ
+                      </button>
+                      <button
+                        onClick={handleSaveNote}
+                        disabled={noteSaving}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-lg border border-amber-600 transition-colors disabled:opacity-60 disabled:cursor-wait"
+                      >
+                        {noteSaving ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
+                        {noteSaving ? "Đang lưu..." : "Lưu"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-stone-600 whitespace-pre-wrap text-sm sm:text-base leading-relaxed">
+                    {noteValue || (
+                      <span className="text-stone-400 italic">
+                        Chưa có ghi chú.{canEditNote && " Nhấn \"Sửa\" để thêm."}
+                      </span>
+                    )}
+                  </p>
+                )}
               </div>
             </motion.section>
 

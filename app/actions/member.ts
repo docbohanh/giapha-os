@@ -102,3 +102,34 @@ export async function setDefaultRootNode(memberId: string) {
   revalidatePath("/dashboard");
   revalidatePath("/");
 }
+
+export async function updateMemberNote(memberId: string, note: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, is_active")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.is_active) {
+    throw new Error("Tài khoản chưa được kích hoạt.");
+  }
+
+  const { error } = await supabase
+    .from("persons")
+    .update({ note: note.trim() || null })
+    .eq("id", memberId);
+
+  if (error) throw new Error("Lỗi khi cập nhật ghi chú: " + error.message);
+
+  revalidatePath(`/dashboard/members/${memberId}`);
+  revalidatePath("/dashboard");
+}

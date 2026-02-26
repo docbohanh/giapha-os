@@ -19,6 +19,7 @@ export default function MemberDetailModal() {
 
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isUser, setIsUser] = useState(false);
 
   const [person, setPerson] = useState<Person | null>(null);
   const [privateData, setPrivateData] = useState<Record<
@@ -45,11 +46,12 @@ export default function MemberDetailModal() {
           if (user) {
             const { data: profile } = await supabase
               .from("profiles")
-              .select("role")
+              .select("role, is_active")
               .eq("id", user.id)
               .single();
             currentIsAdmin = profile?.role === "admin";
             setIsAdmin(currentIsAdmin);
+            setIsUser(!!profile?.is_active);
           }
           setAuthChecked(true);
         }
@@ -183,6 +185,7 @@ export default function MemberDetailModal() {
                   person={person}
                   privateData={privateData}
                   isAdmin={isAdmin}
+                  isUser={isUser}
                   onLinkClick={closeModal}
                 />
               </div>
