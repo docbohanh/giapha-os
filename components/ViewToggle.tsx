@@ -15,8 +15,8 @@ export default function ViewToggle({ totalMembers = 0, generations = 0 }: ViewTo
   const { view: currentView, setView } = useDashboard();
 
   const tabs = [
-    { id: "list", label: "Danh sách", icon: <List className="size-4" /> },
-    { id: "tree", label: "Sơ đồ cây", icon: <Network className="size-4" /> },
+    { id: "list", label: "List", icon: <List className="size-4" /> },
+    { id: "tree", label: "Tree", icon: <Network className="size-4" /> },
     { id: "mindmap", label: "Mindmap", icon: <ListTree className="size-4" /> },
   ] as const;
 

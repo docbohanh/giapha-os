@@ -269,22 +269,24 @@ export default function FamilyTree({
     >
       {/* Zoom controls — only shown when not controlled externally */}
       {!isExternalZoom && (
-        <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-xl shadow-sm px-2 py-1">
-          <button
-            onClick={zoomOut}
-            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
-            title="Thu nhỏ"
-          >−</button>
-          <button
-            onClick={resetZoom}
-            className="px-1.5 h-6 flex items-center justify-center text-xs font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer min-w-[40px]"
-            title="Đặt lại"
-          >{Math.round(scale * 100)}%</button>
-          <button
-            onClick={zoomIn}
-            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
-            title="Phóng to"
-          >+</button>
+        <div className="sticky top-2 left-0 w-full z-20 flex justify-center pointer-events-none">
+          <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-xl shadow-sm px-2 py-1 pointer-events-auto">
+            <button
+              onClick={zoomOut}
+              className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
+              title="Thu nhỏ"
+            >−</button>
+            <button
+              onClick={resetZoom}
+              className="px-1.5 h-6 flex items-center justify-center text-xs font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer min-w-[40px]"
+              title="Đặt lại"
+            >{Math.round(scale * 100)}%</button>
+            <button
+              onClick={zoomIn}
+              className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
+              title="Phóng to"
+            >+</button>
+          </div>
         </div>
       )}
       {/* We use a style block to inject the CSS logic for the family tree lines */}
