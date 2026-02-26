@@ -44,6 +44,7 @@ export interface Person {
   // New fields
   is_deceased: boolean;
   is_in_law: boolean;
+  is_default_root_node?: boolean | null;
 }
 
 export interface Relationship {

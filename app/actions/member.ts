@@ -62,3 +62,43 @@ export async function deleteMemberProfile(memberId: string) {
   revalidatePath("/dashboard/members");
   redirect("/dashboard");
 }
+
+export async function setDefaultRootNode(memberId: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Chỉ admin mới có quyền thực hiện thao tác này.");
+  }
+
+  // Reset tất cả về null
+  const { error: resetError } = await supabase
+    .from("persons")
+    .update({ is_default_root_node: null })
+    .not("id", "is", null);
+
+  if (resetError) throw new Error("Lỗi khi reset gốc cây.");
+
+  // Set người được chọn
+  const { error: setError } = await supabase
+    .from("persons")
+    .update({ is_default_root_node: true })
+    .eq("id", memberId);
+
+  if (setError) throw new Error("Lỗi khi đặt gốc cây.");
+
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+}

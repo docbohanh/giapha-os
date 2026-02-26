@@ -37,13 +37,18 @@ export default function GuestTreeSection({
                 .map((r) => r.person_b),
         );
 
+        const defaultRoot = persons.find((p) => p.is_default_root_node === true);
         const rootPersons = persons.filter((p) => !childIds.has(p.id));
-        const finalRoots =
-            rootPersons.length > 0
-                ? [rootPersons[0]]
-                : persons.length > 0
-                    ? [persons[0]]
-                    : [];
+        const firstMaleRoot = rootPersons.find((p) => p.gender === "male");
+        const finalRoots = defaultRoot
+            ? [defaultRoot]
+            : firstMaleRoot
+                ? [firstMaleRoot]
+                : rootPersons.length > 0
+                    ? [rootPersons[0]]
+                    : persons.length > 0
+                        ? [persons[0]]
+                        : [];
 
         return { personsMap: pMap, roots: finalRoots };
     }, [persons, relationships]);

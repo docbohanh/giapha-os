@@ -8,12 +8,14 @@ import {
   formatDisplayDate,
   getLunarDateString,
 } from "@/utils/dateHelpers";
+import { setDefaultRootNode } from "@/app/actions/member";
 import { motion, Variants } from "framer-motion";
 import {
   Briefcase,
   ExternalLink,
   Info,
   Leaf,
+  Loader2,
   MapPin,
   Phone,
   Users,
@@ -21,6 +23,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTransition } from "react";
 
 interface MemberDetailContentProps {
   person: Person;
@@ -41,6 +44,8 @@ export default function MemberDetailContent({
   const pathname = usePathname();
   const router = useRouter();
   const isModalView = pathname !== `/dashboard/members/${person.id}`;
+  const [isPending, startTransition] = useTransition();
+  const isCurrentRoot = !!person.is_default_root_node;
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -132,16 +137,30 @@ export default function MemberDetailContent({
 
             {isAdmin && (
               <button
+                disabled={isPending || isCurrentRoot}
                 onClick={() => {
-                  // Persist as default root via cookie (readable server-side)
-                  document.cookie = `defaultRootId=${person.id}; path=/; max-age=31536000; SameSite=Lax`;
-                  router.push(`/dashboard?rootId=${person.id}`);
-                  onLinkClick?.();
+                  startTransition(async () => {
+                    await setDefaultRootNode(person.id);
+                    router.push(`/dashboard?rootId=${person.id}`);
+                    onLinkClick?.();
+                  });
                 }}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 hover:bg-amber-100 hover:border-amber-300 transition-colors cursor-pointer shadow-sm"
+                className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors shadow-sm ${isCurrentRoot
+                    ? "text-emerald-700 bg-emerald-50 border-emerald-200/60 cursor-default"
+                    : isPending
+                      ? "text-amber-500 bg-amber-50 border-amber-200/60 cursor-wait"
+                      : "text-amber-700 bg-amber-50 border-amber-200/60 hover:bg-amber-100 hover:border-amber-300 cursor-pointer"
+                  }`}
                 title="Đặt làm gốc mặc định của cây gia phả"
               >
-                🌳 Đặt làm gốc cây
+                {isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : isCurrentRoot ? (
+                  "✅"
+                ) : (
+                  "🌳"
+                )}
+                {isCurrentRoot ? "Đang là gốc cây" : isPending ? "Đang đặt..." : "Đặt làm gốc cây"}
               </button>
             )}
 

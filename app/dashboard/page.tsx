@@ -38,40 +38,23 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
   const persons = personsData || [];
   const relationships = relsData || [];
 
-  // Prepare map and roots for tree views
-  const personsMap = new Map();
-  persons.forEach((p) => personsMap.set(p.id, p));
-
-  const childIds = new Set(
-    relationships
-      .filter(
-        (r) => r.type === "biological_child" || r.type === "adopted_child",
-      )
-      .map((r) => r.person_b),
-  );
-
+  // Xác định rootId mặc định
   let finalRootId = rootId;
 
-  // Fallback 1: cookie set by admin via "Đặt làm gốc cây" button
   if (!finalRootId) {
-    const cookieRootId = cookieStore.get("defaultRootId")?.value;
-    if (cookieRootId && personsMap.has(cookieRootId)) {
-      finalRootId = cookieRootId;
-    }
-  }
-
-  // Fallback 2: hardcoded default root, then first person with no parent
-  if (!finalRootId || !personsMap.has(finalRootId)) {
-    const hardcodedDefault = "14d16c52-78dd-4cee-b5a1-f14d0cf426e3";
-    if (personsMap.has(hardcodedDefault)) {
-      finalRootId = hardcodedDefault;
+    const defaultRootPerson = persons.find((p) => p.is_default_root_node === true);
+    if (defaultRootPerson) {
+      finalRootId = defaultRootPerson.id;
     } else {
-      const rootsFallback = persons.filter((p) => !childIds.has(p.id));
-      if (rootsFallback.length > 0) {
-        finalRootId = rootsFallback[0].id;
-      } else if (persons.length > 0) {
-        finalRootId = persons[0].id;
-      }
+      // Fallback: người nam đầu tiên không có cha
+      const childIds = new Set(
+        relationships
+          .filter((r) => r.type === "biological_child" || r.type === "adopted_child")
+          .map((r) => r.person_b),
+      );
+      const rootPersons = persons.filter((p) => !childIds.has(p.id));
+      const firstMaleRoot = rootPersons.find((p) => p.gender === "male");
+      finalRootId = firstMaleRoot?.id ?? rootPersons[0]?.id ?? persons[0]?.id;
     }
   }
 

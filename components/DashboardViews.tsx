@@ -36,13 +36,21 @@ export default function DashboardViews({
 
     let finalRootId = rootId;
 
-    // If no rootId is provided, fallback to the earliest created person
+    // If no rootId is provided, fallback to first male root, then first root, then first person
     if (!finalRootId || !pMap.has(finalRootId)) {
-      const rootsFallback = persons.filter((p) => !childIds.has(p.id));
-      if (rootsFallback.length > 0) {
-        finalRootId = rootsFallback[0].id;
-      } else if (persons.length > 0) {
-        finalRootId = persons[0].id; // ultimate fallback
+      const defaultRootPerson = persons.find((p) => p.is_default_root_node === true);
+      if (defaultRootPerson) {
+        finalRootId = defaultRootPerson.id;
+      } else {
+        const rootsFallback = persons.filter((p) => !childIds.has(p.id));
+        const firstMaleRoot = rootsFallback.find((p) => p.gender === "male");
+        if (firstMaleRoot) {
+          finalRootId = firstMaleRoot.id;
+        } else if (rootsFallback.length > 0) {
+          finalRootId = rootsFallback[0].id;
+        } else if (persons.length > 0) {
+          finalRootId = persons[0].id;
+        }
       }
     }
 
