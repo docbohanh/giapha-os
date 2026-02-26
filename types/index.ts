@@ -63,3 +63,19 @@ export interface PersonWithDetails extends Person {
   children?: Person[];
   parents?: Person[];
 }
+
+export type EditRequestStatus = "pending" | "approved" | "rejected";
+
+export interface EditRequest {
+  id: string;
+  person_id: string;
+  user_id: string;
+  content: string;
+  status: EditRequestStatus;
+  admin_note: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  persons?: { full_name: string } | null;
+  user_email?: string | null;
+}

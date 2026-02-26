@@ -20,8 +20,8 @@ export default function LoginPage() {
       const hostname = window.location.hostname;
       if (hostname === "localhost" || hostname === "giapha-os.homielab.com") {
         setIsDemo(true);
-        setEmail("giaphaos@homielab.com");
-        setPassword("giaphaos");
+        // setEmail("giaphaos@homielab.com");
+        // setPassword("giaphaos");
       }
     }
   }, []);
@@ -125,7 +125,7 @@ export default function LoginPage() {
                 ? "Đăng nhập để truy cập gia phả."
                 : "Tạo tài khoản thành viên mới."}
             </p>
-            {isDemo && (
+            {/* {isDemo && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -135,7 +135,7 @@ export default function LoginPage() {
                   Website Demo. Dữ liệu đều không có thật.
                 </p>
               </motion.div>
-            )}
+            )} */}
           </div>
 
           <form className="space-y-5 relative z-10" onSubmit={handleSubmit}>

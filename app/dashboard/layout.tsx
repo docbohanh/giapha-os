@@ -32,6 +32,16 @@ export default async function DashboardLayout({
 
   const isAdmin = profile?.role === "admin";
 
+  // Fetch count of pending edit requests for admin badge
+  let pendingRequestCount = 0;
+  if (isAdmin) {
+    const { count } = await supabase
+      .from("edit_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending");
+    pendingRequestCount = count ?? 0;
+  }
+
   if (!profile?.is_active) {
     return (
       <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans">
@@ -87,7 +97,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans">
-      <DashboardHeader isAdmin={isAdmin} userEmail={user.email} />
+      <DashboardHeader isAdmin={isAdmin} userEmail={user.email} pendingRequestCount={pendingRequestCount} />
       {children}
       <Footer
         className="mt-auto bg-white border-t border-stone-200"

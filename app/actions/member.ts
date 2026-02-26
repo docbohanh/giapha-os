@@ -133,3 +133,107 @@ export async function updateMemberNote(memberId: string, note: string) {
   revalidatePath(`/dashboard/members/${memberId}`);
   revalidatePath("/dashboard");
 }
+
+export async function submitEditRequest(personId: string, content: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.is_active) {
+    throw new Error("Tài khoản chưa được kích hoạt.");
+  }
+
+  const { error } = await supabase.from("edit_requests").insert({
+    person_id: personId,
+    user_id: user.id,
+    content: content.trim(),
+    status: "pending",
+  });
+
+  if (error) throw new Error("Lỗi khi gửi yêu cầu: " + error.message);
+
+  revalidatePath("/dashboard/requests");
+  revalidatePath("/dashboard/admin/requests");
+}
+
+export async function approveEditRequest(requestId: string, adminNote?: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Chỉ admin mới có quyền duyệt yêu cầu.");
+  }
+
+  const { error } = await supabase
+    .from("edit_requests")
+    .update({
+      status: "approved",
+      admin_note: adminNote?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", requestId);
+
+  if (error) throw new Error("Lỗi khi duyệt yêu cầu: " + error.message);
+
+  revalidatePath("/dashboard/admin/requests");
+  revalidatePath("/dashboard/requests");
+}
+
+export async function rejectEditRequest(requestId: string, adminNote?: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Chỉ admin mới có quyền từ chối yêu cầu.");
+  }
+
+  const { error } = await supabase
+    .from("edit_requests")
+    .update({
+      status: "rejected",
+      admin_note: adminNote?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", requestId);
+
+  if (error) throw new Error("Lỗi khi từ chối yêu cầu: " + error.message);
+
+  revalidatePath("/dashboard/admin/requests");
+  revalidatePath("/dashboard/requests");
+}
+

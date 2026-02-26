@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Database, Settings, UserCircle } from "lucide-react";
+import { ChevronDown, ClipboardCheck, ClipboardList, Database, Settings, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import LogoutButton from "./LogoutButton";
@@ -9,9 +9,10 @@ import LogoutButton from "./LogoutButton";
 interface HeaderMenuProps {
   isAdmin: boolean;
   userEmail?: string;
+  pendingRequestCount?: number;
 }
 
-export default function HeaderMenu({ isAdmin, userEmail }: HeaderMenuProps) {
+export default function HeaderMenu({ isAdmin, userEmail, pendingRequestCount = 0 }: HeaderMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -81,7 +82,30 @@ export default function HeaderMenu({ isAdmin, userEmail }: HeaderMenuProps) {
                     <Database className="w-4 h-4" />
                     Sao lưu & Phục hồi
                   </Link>
+                  <Link
+                    href="/dashboard/admin/requests"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
+                  >
+                    <ClipboardCheck className="w-4 h-4" />
+                    Duyệt yêu cầu
+                    {pendingRequestCount > 0 && (
+                      <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center leading-none">
+                        {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
+                      </span>
+                    )}
+                  </Link>
                 </>
+              )}
+              {!isAdmin && (
+                <Link
+                  href="/dashboard/requests"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  Yêu cầu chỉnh sửa
+                </Link>
               )}
               <LogoutButton />
             </div>
