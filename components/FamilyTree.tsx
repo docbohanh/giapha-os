@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import { Person, Relationship } from "@/types";
 import FamilyNodeCard from "./FamilyNodeCard";
@@ -103,6 +103,32 @@ export default function FamilyTree({
   const zoomOut = isExternalZoom ? (onZoomOut ?? (() => { })) : () => setInternalScale((s) => Math.max(MIN_SCALE, +(s - 0.1).toFixed(2)));
   const resetZoom = isExternalZoom ? (onResetZoom ?? (() => { })) : () => setInternalScale(1);
 
+  // Build generationMap: personId → số đời (BFS từ tất cả root thực sự trong DB)
+  const generationMap = useMemo(() => {
+    const childrenMap = new Map<string, string[]>();
+    const allChildIds = new Set<string>();
+    relationships
+      .filter((r) => r.type === "biological_child" || r.type === "adopted_child")
+      .forEach((r) => {
+        allChildIds.add(r.person_b);
+        if (!childrenMap.has(r.person_a)) childrenMap.set(r.person_a, []);
+        childrenMap.get(r.person_a)!.push(r.person_b);
+      });
+
+    const allRootIds = Array.from(personsMap.keys()).filter((id) => !allChildIds.has(id));
+    const genMap = new Map<string, number>();
+    const queue: Array<{ id: string; gen: number }> = allRootIds.map((id) => ({ id, gen: 1 }));
+    const visited = new Set<string>();
+    while (queue.length > 0) {
+      const { id, gen } = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      genMap.set(id, gen);
+      (childrenMap.get(id) ?? []).forEach((cid) => queue.push({ id: cid, gen: gen + 1 }));
+    }
+    return genMap;
+  }, [personsMap, relationships]);
+
   // Helper function to resolve tree connections for a person
   const getTreeData = (personId: string) => {
     const spousesList: SpouseData[] = relationships
@@ -149,15 +175,25 @@ export default function FamilyTree({
   };
 
   // Recursive function for rendering nodes
-  const renderTreeNode = (personId: string): React.ReactNode => {
+  const renderTreeNode = (personId: string, isRoot: boolean = false): React.ReactNode => {
     const data = getTreeData(personId);
     if (!data.person) return null;
+    const generation = generationMap.get(personId);
 
     return (
       <li>
         <div className="node-container inline-flex flex-col items-center">
           {/* Main Person & Spouses Row */}
           <div className="flex relative z-10 bg-white rounded-2xl shadow-md border border-stone-200/80 transition-opacity">
+            {/* Show generation only at root level, centered above the entire joint container */}
+            {isRoot && generation !== undefined && (
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-30">
+                <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-white text-stone-900 border border-stone-200 shadow-md leading-none whitespace-nowrap">
+                  Đời thứ {generation}
+                </span>
+              </div>
+            )}
+
             {/* When ≥2 spouses: first spouse goes LEFT of main person */}
             {data.spouses.length >= 2 && (
               <div className="flex relative">
@@ -167,11 +203,12 @@ export default function FamilyTree({
                   person={data.spouses[0].person}
                   role={data.spouses[0].person.gender === "male" ? "Chồng" : "Vợ"}
                   note={data.spouses[0].note}
+                  generation={generationMap.get(data.spouses[0].person.id)}
                 />
               </div>
             )}
 
-            <FamilyNodeCard person={data.person} isMainNode={true} />
+            <FamilyNodeCard person={data.person} isMainNode={true} generation={generation} />
 
             {data.spouses.length > 0 && (
               <>
@@ -188,6 +225,7 @@ export default function FamilyTree({
                       person={spouseData.person}
                       role={spouseData.person.gender === "male" ? "Chồng" : "Vợ"}
                       note={spouseData.note}
+                      generation={generationMap.get(spouseData.person.id)}
                     />
                   </div>
                 ))}
@@ -201,7 +239,7 @@ export default function FamilyTree({
           <ul>
             {data.children.map((child) => (
               <React.Fragment key={child.id}>
-                {renderTreeNode(child.id)}
+                {renderTreeNode(child.id, false)}
               </React.Fragment>
             ))}
           </ul>
@@ -340,7 +378,7 @@ export default function FamilyTree({
         <ul>
           {roots.map((root) => (
             <React.Fragment key={root.id}>
-              {renderTreeNode(root.id)}
+              {renderTreeNode(root.id, true)}
             </React.Fragment>
           ))}
         </ul>

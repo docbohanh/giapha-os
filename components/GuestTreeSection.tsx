@@ -31,7 +31,7 @@ export default function GuestTreeSection({
     const zoomOut = () => setScale((s) => Math.max(MIN_SCALE, +(s - 0.1).toFixed(2)));
     const resetZoom = () => setScale(1);
 
-    const { personsMap, roots } = useMemo(() => {
+    const { personsMap, roots, stats } = useMemo(() => {
         const pMap = new Map<string, Person>();
         persons.forEach((p) => pMap.set(p.id, p));
 
@@ -56,7 +56,37 @@ export default function GuestTreeSection({
                         ? [persons[0]]
                         : [];
 
-        return { personsMap: pMap, roots: finalRoots };
+        // Tính số đời: BFS từ TẤT CẢ root node trong DB (không phụ thuộc default root)
+        const childrenMap = new Map<string, string[]>();
+        relationships
+            .filter((r) => r.type === "biological_child" || r.type === "adopted_child")
+            .forEach((r) => {
+                if (!childrenMap.has(r.person_a)) childrenMap.set(r.person_a, []);
+                childrenMap.get(r.person_a)!.push(r.person_b);
+            });
+
+        // Tất cả người không có cha/mẹ trong DB = root thực sự
+        const allChildIds = new Set(
+            relationships
+                .filter((r) => r.type === "biological_child" || r.type === "adopted_child")
+                .map((r) => r.person_b),
+        );
+        const allRootIds = persons.filter((p) => !allChildIds.has(p.id)).map((p) => p.id);
+
+        let maxGen = 0;
+        if (allRootIds.length > 0) {
+            const queue: Array<{ id: string; gen: number }> = allRootIds.map((id) => ({ id, gen: 1 }));
+            const visited = new Set<string>();
+            while (queue.length > 0) {
+                const { id, gen } = queue.shift()!;
+                if (visited.has(id)) continue;
+                visited.add(id);
+                if (gen > maxGen) maxGen = gen;
+                (childrenMap.get(id) ?? []).forEach((cid) => queue.push({ id: cid, gen: gen + 1 }));
+            }
+        }
+
+        return { personsMap: pMap, roots: finalRoots, stats: { total: persons.length, generations: maxGen } };
     }, [persons, relationships]);
 
     if (persons.length === 0) return null;
@@ -114,6 +144,19 @@ export default function GuestTreeSection({
                         );
                     })}
                 </div>
+            </div>
+
+            {/* Stats bar */}
+            <div className="flex justify-center items-center gap-3 mb-3 text-xs text-stone-500">
+                <span className="flex items-center gap-1">
+                    <span className="font-semibold text-stone-700">{stats.total.toLocaleString()}</span>
+                    thành viên
+                </span>
+                <span className="w-px h-3 bg-stone-300" />
+                <span className="flex items-center gap-1">
+                    <span className="font-semibold text-stone-700">{stats.generations}</span>
+                    đời
+                </span>
             </div>
 
             {/* Tree container */}

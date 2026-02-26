@@ -8,7 +8,7 @@ import FamilyTree from "@/components/FamilyTree";
 import MindmapTree from "@/components/MindmapTree";
 import RootSelector from "@/components/RootSelector";
 import { Person, Relationship } from "@/types";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 interface DashboardViewsProps {
   persons: Person[];
@@ -19,10 +19,10 @@ export default function DashboardViews({
   persons,
   relationships,
 }: DashboardViewsProps) {
-  const { view: currentView, rootId } = useDashboard();
+  const { view: currentView, rootId, setTreeStats } = useDashboard();
 
   // Prepare map and roots for tree views
-  const { personsMap, roots, defaultRootId } = useMemo(() => {
+  const { personsMap, roots, defaultRootId, stats } = useMemo(() => {
     const pMap = new Map<string, Person>();
     persons.forEach((p) => pMap.set(p.id, p));
 
@@ -59,14 +59,49 @@ export default function DashboardViews({
       calculatedRoots = [pMap.get(finalRootId)!];
     }
 
+    // Tính số đời: BFS từ TẤT CẢ root node trong DB
+    const childrenMap = new Map<string, string[]>();
+    relationships
+      .filter((r) => r.type === "biological_child" || r.type === "adopted_child")
+      .forEach((r) => {
+        if (!childrenMap.has(r.person_a)) childrenMap.set(r.person_a, []);
+        childrenMap.get(r.person_a)!.push(r.person_b);
+      });
+
+    const allChildIds = new Set(
+      relationships
+        .filter((r) => r.type === "biological_child" || r.type === "adopted_child")
+        .map((r) => r.person_b),
+    );
+    const allRootIds = persons.filter((p) => !allChildIds.has(p.id)).map((p) => p.id);
+
+    let maxGen = 0;
+    if (allRootIds.length > 0) {
+      const queue: Array<{ id: string; gen: number }> = allRootIds.map((id) => ({ id, gen: 1 }));
+      const visited = new Set<string>();
+      while (queue.length > 0) {
+        const { id, gen } = queue.shift()!;
+        if (visited.has(id)) continue;
+        visited.add(id);
+        if (gen > maxGen) maxGen = gen;
+        (childrenMap.get(id) ?? []).forEach((cid) => queue.push({ id: cid, gen: gen + 1 }));
+      }
+    }
+
     return {
       personsMap: pMap,
       roots: calculatedRoots,
       defaultRootId: finalRootId,
+      stats: { total: persons.length, generations: maxGen },
     };
   }, [persons, relationships, rootId]);
 
   const activeRootId = rootId || defaultRootId;
+
+  // Sync stats to context so ViewToggle can display them
+  useEffect(() => {
+    setTreeStats({ totalMembers: stats.total, generations: stats.generations });
+  }, [stats.total, stats.generations, setTreeStats]);
 
   return (
     <>

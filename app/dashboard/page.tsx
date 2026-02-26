@@ -58,9 +58,33 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
     }
   }
 
+  // Tính stats để truyền vào ViewToggle
+  const childrenMap = new Map<string, string[]>();
+  const allChildIds = new Set<string>();
+  relationships
+    .filter((r) => r.type === "biological_child" || r.type === "adopted_child")
+    .forEach((r) => {
+      allChildIds.add(r.person_b);
+      if (!childrenMap.has(r.person_a)) childrenMap.set(r.person_a, []);
+      childrenMap.get(r.person_a)!.push(r.person_b);
+    });
+  const allRootIds = persons.filter((p) => !allChildIds.has(p.id)).map((p) => p.id);
+  let maxGen = 0;
+  if (allRootIds.length > 0) {
+    const queue: Array<{ id: string; gen: number }> = allRootIds.map((id) => ({ id, gen: 1 }));
+    const visited = new Set<string>();
+    while (queue.length > 0) {
+      const { id, gen } = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      if (gen > maxGen) maxGen = gen;
+      (childrenMap.get(id) ?? []).forEach((cid) => queue.push({ id: cid, gen: gen + 1 }));
+    }
+  }
+
   return (
     <DashboardProvider>
-      <ViewToggle />
+      <ViewToggle totalMembers={persons.length} generations={maxGen} />
       <DashboardViews persons={persons} relationships={relationships} />
 
       <MemberDetailModal />

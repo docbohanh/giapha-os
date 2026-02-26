@@ -13,6 +13,8 @@ interface DashboardState {
   setView: (view: ViewMode) => void;
   rootId: string | null;
   setRootId: (id: string | null) => void;
+  treeStats: { totalMembers: number; generations: number };
+  setTreeStats: (stats: { totalMembers: number; generations: number }) => void;
 }
 
 export const DashboardContext = createContext<DashboardState | undefined>(
@@ -25,6 +27,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [showAvatar, setShowAvatar] = useState<boolean>(true);
   const [view, setViewState] = useState<ViewMode>("tree");
   const [rootId, setRootIdState] = useState<string | null>(null);
+  const [treeStats, setTreeStats] = useState<{ totalMembers: number; generations: number }>({ totalMembers: 0, generations: 0 });
 
   // Initialize non-rootId state once on mount
   useEffect(() => {
@@ -113,6 +116,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         setView,
         rootId,
         setRootId,
+        treeStats,
+        setTreeStats,
       }}
     >
       {children}
@@ -134,6 +139,8 @@ export function useDashboard(): DashboardState {
       setView: () => { },
       rootId: null,
       setRootId: () => { },
+      treeStats: { totalMembers: 0, generations: 0 },
+      setTreeStats: () => { },
     };
   }
   return context;

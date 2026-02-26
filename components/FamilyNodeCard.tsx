@@ -18,6 +18,7 @@ interface FamilyNodeCardProps {
   isRingVisible?: boolean;
   isRingOnRight?: boolean; // Position ring on right side (when card is left of main person)
   isPlusVisible?: boolean;
+  generation?: number; // Số đời hiện tại của node
 }
 
 export default function FamilyNodeCard({
@@ -30,6 +31,7 @@ export default function FamilyNodeCard({
   isRingVisible = false,
   isRingOnRight = false,
   isPlusVisible = false,
+  generation,
 }: FamilyNodeCardProps) {
   const { showAvatar, setMemberModalId } = useDashboard();
 
@@ -112,11 +114,6 @@ export default function FamilyNodeCard({
         >
           {person.full_name}
         </span>
-        {/* {isDeceased && (
-          <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-stone-100 text-stone-400 uppercase tracking-wider border border-stone-200/50">
-            Đã mất
-          </span>
-        )} */}
       </div>
 
       {/* 3. Role */}
