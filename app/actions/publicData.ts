@@ -22,7 +22,7 @@ export async function getPublicFamilyData(): Promise<PublicFamilyData> {
         const { data: persons } = await supabase
             .from("persons")
             .select(
-                "id, full_name, gender, birth_year, birth_month, birth_day, death_year, death_month, death_day, is_deceased, is_in_law, avatar_url",
+                "id, full_name, gender, birth_year, birth_month, birth_day, death_year, death_month, death_day, is_deceased, is_in_law, is_default_root_node, avatar_url",
             )
             .order("birth_year", { ascending: true, nullsFirst: false });
 
