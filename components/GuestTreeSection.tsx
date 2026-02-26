@@ -24,6 +24,12 @@ export default function GuestTreeSection({
     isLoggedIn,
 }: GuestTreeSectionProps) {
     const [view, setView] = useState<"tree" | "mindmap">("tree");
+    const [scale, setScale] = useState(1);
+    const MIN_SCALE = 0.3;
+    const MAX_SCALE = 2;
+    const zoomIn = () => setScale((s) => Math.min(MAX_SCALE, +(s + 0.1).toFixed(2)));
+    const zoomOut = () => setScale((s) => Math.max(MIN_SCALE, +(s - 0.1).toFixed(2)));
+    const resetZoom = () => setScale(1);
 
     const { personsMap, roots } = useMemo(() => {
         const pMap = new Map<string, Person>();
@@ -112,12 +118,37 @@ export default function GuestTreeSection({
 
             {/* Tree container */}
             <div className="relative rounded-2xl border border-stone-200/60 bg-white/60 backdrop-blur-md overflow-hidden">
+                {/* Zoom controls — fixed at top-right, above scroll */}
+                {view === "tree" && (
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-xl shadow-sm px-2 py-1">
+                        <button
+                            onClick={zoomOut}
+                            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
+                            title="Thu nhỏ"
+                        >−</button>
+                        <button
+                            onClick={resetZoom}
+                            className="px-1.5 h-6 flex items-center justify-center text-xs font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer min-w-[40px]"
+                            title="Đặt lại"
+                        >{Math.round(scale * 100)}%</button>
+                        <button
+                            onClick={zoomIn}
+                            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
+                            title="Phóng to"
+                        >+</button>
+                    </div>
+                )}
+
                 <div className="guest-scroll overflow-auto max-h-[480px] overscroll-contain">
                     {view === "tree" ? (
                         <FamilyTree
                             personsMap={personsMap}
                             relationships={relationships}
                             roots={roots}
+                            externalScale={scale}
+                            onZoomIn={zoomIn}
+                            onZoomOut={zoomOut}
+                            onResetZoom={resetZoom}
                         />
                     ) : (
                         <MindmapTree

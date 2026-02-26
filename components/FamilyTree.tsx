@@ -14,10 +14,18 @@ export default function FamilyTree({
   personsMap,
   relationships,
   roots,
+  externalScale,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
 }: {
   personsMap: Map<string, Person>;
   relationships: Relationship[];
   roots: Person[];
+  externalScale?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPressed, setIsPressed] = useState(false);
@@ -25,7 +33,7 @@ export default function FamilyTree({
   const hasDraggedRef = useRef(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [scrollStart, setScrollStart] = useState({ left: 0, top: 0 });
-  const [scale, setScale] = useState(1);
+  const [internalScale, setInternalScale] = useState(1);
   const MIN_SCALE = 0.3;
   const MAX_SCALE = 2;
 
@@ -86,12 +94,14 @@ export default function FamilyTree({
     if (!e.ctrlKey && !e.metaKey) return; // only zoom on Ctrl+scroll or pinch
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, +(s + delta).toFixed(2))));
+    setInternalScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, +(s + delta).toFixed(2))));
   };
 
-  const zoomIn = () => setScale((s) => Math.min(MAX_SCALE, +(s + 0.1).toFixed(2)));
-  const zoomOut = () => setScale((s) => Math.max(MIN_SCALE, +(s - 0.1).toFixed(2)));
-  const resetZoom = () => setScale(1);
+  const isExternalZoom = externalScale !== undefined;
+  const scale = isExternalZoom ? externalScale : internalScale;
+  const zoomIn = isExternalZoom ? (onZoomIn ?? (() => { })) : () => setInternalScale((s) => Math.min(MAX_SCALE, +(s + 0.1).toFixed(2)));
+  const zoomOut = isExternalZoom ? (onZoomOut ?? (() => { })) : () => setInternalScale((s) => Math.max(MIN_SCALE, +(s - 0.1).toFixed(2)));
+  const resetZoom = isExternalZoom ? (onResetZoom ?? (() => { })) : () => setInternalScale(1);
 
   // Helper function to resolve tree connections for a person
   const getTreeData = (personId: string) => {
@@ -219,24 +229,26 @@ export default function FamilyTree({
       onWheel={handleWheel}
       onDragStart={(e) => e.preventDefault()} // Prevent browser default dragging of links/images
     >
-      {/* Zoom controls */}
-      <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-xl shadow-sm px-2 py-1">
-        <button
-          onClick={zoomOut}
-          className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
-          title="Thu nhỏ"
-        >−</button>
-        <button
-          onClick={resetZoom}
-          className="px-1.5 h-6 flex items-center justify-center text-xs font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer min-w-[40px]"
-          title="Đặt lại"
-        >{Math.round(scale * 100)}%</button>
-        <button
-          onClick={zoomIn}
-          className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
-          title="Phóng to"
-        >+</button>
-      </div>
+      {/* Zoom controls — only shown when not controlled externally */}
+      {!isExternalZoom && (
+        <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-xl shadow-sm px-2 py-1">
+          <button
+            onClick={zoomOut}
+            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
+            title="Thu nhỏ"
+          >−</button>
+          <button
+            onClick={resetZoom}
+            className="px-1.5 h-6 flex items-center justify-center text-xs font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer min-w-[40px]"
+            title="Đặt lại"
+          >{Math.round(scale * 100)}%</button>
+          <button
+            onClick={zoomIn}
+            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
+            title="Phóng to"
+          >+</button>
+        </div>
+      )}
       {/* We use a style block to inject the CSS logic for the family tree lines */}
       <style
         dangerouslySetInnerHTML={{

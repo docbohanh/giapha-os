@@ -146,21 +146,17 @@ export default function MemberDetailContent({
                   });
                 }}
                 className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors shadow-sm ${isCurrentRoot
-                    ? "text-emerald-700 bg-emerald-50 border-emerald-200/60 cursor-default"
-                    : isPending
-                      ? "text-amber-500 bg-amber-50 border-amber-200/60 cursor-wait"
-                      : "text-amber-700 bg-amber-50 border-amber-200/60 hover:bg-amber-100 hover:border-amber-300 cursor-pointer"
+                  ? "text-emerald-700 bg-emerald-50 border-emerald-200/60 cursor-default"
+                  : isPending
+                    ? "text-amber-500 bg-amber-50 border-amber-200/60 cursor-wait"
+                    : "text-amber-700 bg-amber-50 border-amber-200/60 hover:bg-amber-100 hover:border-amber-300 cursor-pointer"
                   }`}
                 title="Đặt làm gốc mặc định của cây gia phả"
               >
                 {isPending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : isCurrentRoot ? (
-                  "✅"
-                ) : (
-                  "🌳"
-                )}
-                {isCurrentRoot ? "Đang là gốc cây" : isPending ? "Đang đặt..." : "Đặt làm gốc cây"}
+                ) : isCurrentRoot ? ("✅ ") : ("🌳 ")}
+                {isCurrentRoot ? " Đang là gốc cây" : isPending ? " Đang đặt..." : " Đặt làm gốc cây"}
               </button>
             )}
 
