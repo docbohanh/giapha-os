@@ -33,11 +33,18 @@ export default function HeaderMenu({ isAdmin, userEmail, pendingRequestCount = 0
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full hover:bg-stone-100 transition-all duration-200 cursor-pointer border border-transparent hover:border-stone-200"
       >
-        <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-200 to-amber-100 text-amber-800 flex items-center justify-center font-bold shadow-sm ring-1 ring-amber-300/50">
-          {userEmail ? (
-            userEmail.charAt(0).toUpperCase()
-          ) : (
-            <UserCircle className="w-5 h-5" />
+        <div className="relative">
+          <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-200 to-amber-100 text-amber-800 flex items-center justify-center font-bold shadow-sm ring-1 ring-amber-300/50">
+            {userEmail ? (
+              userEmail.charAt(0).toUpperCase()
+            ) : (
+              <UserCircle className="w-5 h-5" />
+            )}
+          </div>
+          {isAdmin && pendingRequestCount > 0 && (
+            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-white text-[8px] font-bold border-2 border-white shadow-sm ring-1 ring-amber-600/20">
+              {pendingRequestCount > 9 ? "9+" : pendingRequestCount}
+            </div>
           )}
         </div>
         <ChevronDown
