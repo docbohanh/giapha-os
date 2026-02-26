@@ -103,7 +103,7 @@ export default function LandingHero({ siteName, persons, relationships, isLogged
   return (
     <>
       <motion.div
-        className="max-w-5xl text-center space-y-12 w-full relative z-10"
+        className="max-w-7xl text-center space-y-12 w-full relative z-10"
         initial="hidden"
         animate="visible"
         variants={staggerContainer}

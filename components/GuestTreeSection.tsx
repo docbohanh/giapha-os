@@ -67,7 +67,7 @@ export default function GuestTreeSection({
     ];
 
     return (
-        <div className="w-full max-w-5xl mx-auto">
+        <div className="w-full">
             {/* Scrollbar style — hidden by default, visible on hover */}
             <style dangerouslySetInnerHTML={{
                 __html: `
@@ -139,7 +139,7 @@ export default function GuestTreeSection({
                     </div>
                 )}
 
-                <div className="guest-scroll overflow-auto max-h-[480px] overscroll-contain">
+                <div className="guest-scroll overflow-auto min-h-[480px] max-h-[960px] overscroll-contain">
                     {view === "tree" ? (
                         <FamilyTree
                             personsMap={personsMap}
