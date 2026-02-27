@@ -231,7 +231,7 @@ export default function MemberForm({
         animate="show"
         className="bg-white/80 backdrop-blur-md p-5 sm:p-8 rounded-2xl shadow-sm border border-stone-200/80"
       >
-        <h3 className="text-lg sm:text-xl font-serif font-bold text-stone-800 mb-6 border-b border-stone-100 pb-4 flex items-center gap-2">
+        <h3 className="text-lg sm:text-xl font-sans font-bold text-stone-800 mb-6 border-b border-stone-100 pb-4 flex items-center gap-2">
           <User className="w-5 h-5 text-amber-600" />
           Thông tin chung
         </h3>
@@ -569,7 +569,7 @@ export default function MemberForm({
           {/* Decorative Background Icon */}
           <Lock className="absolute -right-6 -bottom-6 w-32 h-32 text-amber-500/5 rotate-12" />
 
-          <h3 className="text-lg sm:text-xl font-serif font-bold text-amber-900 mb-6 border-b border-amber-200/50 pb-4 flex items-center gap-2 relative z-10">
+          <h3 className="text-lg sm:text-xl font-sans font-bold text-amber-900 mb-6 border-b border-amber-200/50 pb-4 flex items-center gap-2 relative z-10">
             <span className="p-1.5 bg-amber-100/80 text-amber-700 rounded-lg shadow-xs">
               <Lock className="w-4 h-4" />
             </span>

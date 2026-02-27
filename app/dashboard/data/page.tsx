@@ -35,7 +35,7 @@ export default async function DataManagementPage() {
       <div className="max-w-7xl mx-auto px-4 pb-8 sm:px-6 lg:px-8 w-full relative z-10">
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
-            <h2 className="text-3xl font-serif font-bold text-stone-800 tracking-tight">
+            <h2 className="text-3xl font-sans font-bold text-stone-800 tracking-tight">
               Sao lưu & Phục hồi
             </h2>
             <p className="text-stone-500 mt-2 text-sm sm:text-base max-w-2xl">

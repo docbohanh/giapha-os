@@ -117,7 +117,7 @@ export default function LoginPage() {
             >
               <Shield className="w-8 h-8 text-amber-600" />
             </Link>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold text-stone-900 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-sans font-bold text-stone-900 tracking-tight">
               {isLogin ? "Đăng nhập" : "Đăng ký"}
             </h2>
             <p className="mt-3 text-sm text-stone-500 font-medium tracking-wide">

@@ -76,7 +76,7 @@ export default async function DashboardLayout({
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-serif font-bold text-stone-800 mb-2">
+            <h2 className="text-2xl font-sans font-bold text-stone-800 mb-2">
               Tài khoản chờ duyệt
             </h2>
             <p className="text-stone-600">

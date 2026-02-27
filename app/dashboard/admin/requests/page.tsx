@@ -52,7 +52,7 @@ export default async function AdminRequestsPage() {
                         <ClipboardCheck className="w-5 h-5 text-amber-700" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-serif font-bold text-stone-900">
+                        <h1 className="text-2xl font-sans font-bold text-stone-900">
                             Danh sách yêu cầu
                         </h1>
                         <p className="text-sm text-stone-500 mt-0.5">

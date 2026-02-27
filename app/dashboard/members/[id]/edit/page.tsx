@@ -69,7 +69,7 @@ export default async function EditMemberPage({ params }: PageProps) {
       {/* <div className="absolute top-[40%] -right-[10%] w-[400px] h-[400px] bg-stone-300/20 rounded-full blur-[100px] pointer-events-none" /> */}
 
       <div className="w-full relative z-20 py-4 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-serif font-bold text-stone-800">
+        <h1 className="text-xl sm:text-2xl font-sans font-bold text-stone-800">
           Chỉnh Sửa Thành Viên
         </h1>
         <a

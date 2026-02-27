@@ -40,7 +40,7 @@ export default function FamilyNodeCard({
   const content = (
     <div
       onClick={onClickCard}
-      className={`group py-2 px-1 ${showAvatar ? "w-24 sm:w-28 md:w-32" : "w-8 sm:w-12 md:w-16"} flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer relative bg-white/70 backdrop-blur-md rounded-2xl
+      className={`group py-2 px-1 ${showAvatar ? "w-20 sm:w-24 md:w-28" : "w-8 sm:w-12 md:w-16"} flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer relative bg-white/70 backdrop-blur-md rounded-2xl
         ${isMainNode && isDeceased ? "grayscale-[0.4] opacity-80" : ""}
       `}
     >

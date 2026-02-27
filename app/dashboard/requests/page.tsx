@@ -54,7 +54,7 @@ export default async function MyRequestsPage() {
                         <ClipboardList className="w-5 h-5 text-amber-700" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-serif font-bold text-stone-900">
+                        <h1 className="text-2xl font-sans font-bold text-stone-900">
                             Yêu cầu của tôi
                         </h1>
                         <p className="text-sm text-stone-500 mt-0.5">

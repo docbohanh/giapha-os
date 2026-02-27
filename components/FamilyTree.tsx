@@ -187,8 +187,8 @@ export default function FamilyTree({
           <div className="flex relative z-10 bg-white rounded-2xl shadow-md border border-stone-200/80 transition-opacity">
             {/* Show generation only at root level, centered above the entire joint container */}
             {isRoot && generation !== undefined && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-30">
-                <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-white text-stone-900 border border-stone-200 shadow-md leading-none whitespace-nowrap">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30">
+                <span className="inline-block px-2 py-1 rounded-full text-[8px] sm:text-[10px] font-bold bg-amber-100 text-stone-900 border border-stone-200 shadow-md leading-none whitespace-nowrap">
                   Đời thứ {generation}
                 </span>
               </div>

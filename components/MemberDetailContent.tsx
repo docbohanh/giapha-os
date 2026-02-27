@@ -119,7 +119,7 @@ export default function MemberDetailContent({
             className="flex flex-col sm:flex-row justify-between items-start sm:items-center"
           >
             <div>
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 flex items-center gap-2 sm:gap-3 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-sans font-bold text-stone-900 flex items-center gap-2 sm:gap-3 flex-wrap">
                 {fullPerson.full_name}
                 {isDeceased && (
                   <span className="text-[10px] sm:text-xs font-sans font-bold text-stone-500 border border-stone-200/80 bg-stone-100/50 rounded-md px-2 py-0.5 whitespace-nowrap uppercase tracking-wider shadow-xs">

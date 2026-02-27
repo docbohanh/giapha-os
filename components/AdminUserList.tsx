@@ -162,22 +162,20 @@ export default function AdminUserList({
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
-                        user.role === "admin"
+                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.role === "admin"
                           ? "bg-amber-100 text-amber-800 border border-amber-200"
                           : "bg-stone-100 text-stone-600 border border-stone-200"
-                      }`}
+                        }`}
                     >
                       {user.role}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
-                        user.is_active
+                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.is_active
                           ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                           : "bg-red-100 text-red-800 border border-red-200"
-                      }`}
+                        }`}
                     >
                       {user.is_active ? "Đã duyệt" : "Chờ duyệt"}
                     </span>
@@ -259,7 +257,7 @@ export default function AdminUserList({
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm transition-opacity duration-300">
           <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-stone-200/60 w-full max-w-md overflow-hidden transform transition-all">
             <div className="px-6 py-5 border-b border-stone-100/80 flex justify-between items-center bg-stone-50/50">
-              <h3 className="text-xl font-serif font-bold text-stone-800">
+              <h3 className="text-xl font-sans font-bold text-stone-800">
                 Tạo Người Dùng Mới
               </h3>
               <button

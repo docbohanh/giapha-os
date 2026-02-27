@@ -183,7 +183,7 @@ export default function LandingHero({ siteName, persons, relationships, isLogged
               <div className="p-3.5 bg-white rounded-2xl mb-6 shadow-sm ring-1 ring-stone-100 group-hover:scale-110 group-hover:shadow-md transition-all duration-300 relative z-10">
                 {feature.icon}
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-stone-800 mb-3 font-serif relative z-10 group-hover:text-amber-900 transition-colors">
+              <h3 className="text-xl sm:text-2xl font-bold text-stone-800 mb-3 font-sans relative z-10 group-hover:text-amber-900 transition-colors">
                 {feature.title}
               </h3>
               <p className="text-stone-600 text-base leading-relaxed relative z-10">
