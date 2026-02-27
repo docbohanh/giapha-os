@@ -144,7 +144,7 @@ export default function MemberDetailContent({
                 )}
               </h1>
 
-              {isAdmin && (
+              {isAdmin && person.gender === "male" && (
                 <button
                   disabled={isPending || isCurrentRoot}
                   onClick={() => {

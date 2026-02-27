@@ -40,7 +40,7 @@ export default function FamilyNodeCard({
   const content = (
     <div
       onClick={onClickCard}
-      className={`group py-2 px-1 w-24 sm:w-28 md:w-32 flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer relative bg-white/70 backdrop-blur-md rounded-2xl
+      className={`group py-2 px-1 ${showAvatar ? "w-24 sm:w-28 md:w-32" : "w-8 sm:w-12 md:w-16"} flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer relative bg-white/70 backdrop-blur-md rounded-2xl
         ${isMainNode && isDeceased ? "grayscale-[0.4] opacity-80" : ""}
       `}
     >
@@ -101,7 +101,8 @@ export default function FamilyNodeCard({
       {/* 2. Gender Icon + Name */}
       <div className="flex flex-col items-center justify-center gap-1 w-full px-0.5 sm:px-1 relative z-10">
         <span
-          className={`text-[10px] sm:text-[11px] md:text-xs font-bold text-center leading-tight line-clamp-2 transition-colors
+          className={`text-[10px] sm:text-[11px] md:text-xs font-bold text-center leading-tight transition-colors
+            ${showAvatar ? "line-clamp-2" : ""}
             ${onClickName ? "text-stone-800 group-hover:text-amber-700 hover:underline" : "text-stone-800 group-hover:text-amber-800"}`}
           title={person.full_name}
           onClick={(e) => {
@@ -112,7 +113,15 @@ export default function FamilyNodeCard({
             }
           }}
         >
-          {person.full_name}
+          {showAvatar ? (
+            person.full_name
+          ) : (
+            person.full_name.split(" ").map((word, index) => (
+              <span key={index} className="block">
+                {word}
+              </span>
+            ))
+          )}
         </span>
       </div>
 
