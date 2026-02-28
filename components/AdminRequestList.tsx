@@ -1,9 +1,9 @@
 "use client";
 
-import { approveEditRequest, rejectEditRequest } from "@/app/actions/member";
+import { approveEditRequest, deleteEditRequest, rejectEditRequest } from "@/app/actions/member";
 import { EditRequest } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, ChevronUp, Search, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Search, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface AdminRequestListProps {
@@ -94,6 +94,22 @@ export default function AdminRequestList({
             setLoadingId(null);
             setNoteInputId(null);
             setPendingAction(null);
+        }
+    };
+
+    const handleDelete = async (requestId: string) => {
+        if (!window.confirm("Bạn có chắc chắn muốn xoá yêu cầu này? Thao tác này không thể hoàn tác.")) {
+            return;
+        }
+
+        setLoadingId(requestId);
+        try {
+            await deleteEditRequest(requestId);
+            setRequests((prev) => prev.filter((r) => r.id !== requestId));
+        } catch (err) {
+            alert((err as Error).message || "Đã xảy ra lỗi khi xoá.");
+        } finally {
+            setLoadingId(null);
         }
     };
 
@@ -188,6 +204,18 @@ export default function AdminRequestList({
                                                 </button>
                                             </>
                                         )}
+                                        <button
+                                            disabled={loadingId === req.id}
+                                            onClick={() => handleDelete(req.id)}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                                            title="Xoá yêu cầu"
+                                        >
+                                            {loadingId === req.id && pendingAction === null ? (
+                                                <span className="w-3.5 h-3.5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Trash2 className="w-4 h-4" />
+                                            )}
+                                        </button>
                                         <button
                                             onClick={() =>
                                                 setExpandedId(isExpanded ? null : req.id)

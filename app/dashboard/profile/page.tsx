@@ -25,7 +25,12 @@ export default function ProfilePage() {
                 data: { user },
             } = await supabase.auth.getUser();
             setUser(user);
-            setDisplayName(user?.user_metadata?.display_name || "");
+            setDisplayName(
+                user?.user_metadata?.display_name ||
+                user?.user_metadata?.full_name ||
+                user?.user_metadata?.name ||
+                ""
+            );
             setLoading(false);
         }
         getUser();
@@ -83,11 +88,17 @@ export default function ProfilePage() {
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
-            <div className="mb-8">
+            {/* <div className="mb-8">
                 <h1 className="text-3xl font-bold text-stone-900">Thông tin cá nhân</h1>
                 <p className="text-stone-500 mt-2">
                     Quản lý thông tin tài khoản và bảo mật của bạn.
                 </p>
+            </div> */}
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-amber-50 rounded-xl">
+                    <UserIcon className="w-5 h-5 text-amber-600" />
+                </div>
+                <h1 className="text-2xl font-bold text-stone-900">Thông tin cá nhân</h1>
             </div>
 
             <AnimatePresence>
@@ -112,15 +123,10 @@ export default function ProfilePage() {
                 )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
                 {/* Profile Section */}
                 <section className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-amber-50 rounded-xl">
-                            <UserIcon className="w-5 h-5 text-amber-600" />
-                        </div>
-                        <h2 className="text-xl font-bold text-stone-900">Thông tin cơ bản</h2>
-                    </div>
+
 
                     <form onSubmit={handleUpdateProfile} className="space-y-4">
                         <div>
@@ -133,9 +139,9 @@ export default function ProfilePage() {
                                 value={user?.email || ""}
                                 className="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-500 cursor-not-allowed"
                             />
-                            <p className="mt-1.5 text-[12px] text-stone-400 italic">
+                            {/* <p className="mt-1.5 text-[12px] text-stone-400 italic">
                                 Email không thể thay đổi.
-                            </p>
+                            </p> */}
                         </div>
 
                         <div>

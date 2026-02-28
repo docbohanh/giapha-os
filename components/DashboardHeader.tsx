@@ -7,6 +7,7 @@ import React from "react";
 interface DashboardHeaderProps {
   isAdmin: boolean;
   userEmail?: string;
+  displayName?: string;
   pendingRequestCount?: number;
   children?: React.ReactNode;
 }
@@ -14,6 +15,7 @@ interface DashboardHeaderProps {
 export default function DashboardHeader({
   isAdmin,
   userEmail,
+  displayName,
   pendingRequestCount = 0,
   children,
 }: DashboardHeaderProps) {
@@ -37,7 +39,12 @@ export default function DashboardHeader({
         </div>
         <div className="flex items-center gap-4">
           {children}
-          <HeaderMenu isAdmin={isAdmin} userEmail={userEmail} pendingRequestCount={pendingRequestCount} />
+          <HeaderMenu
+            isAdmin={isAdmin}
+            userEmail={userEmail}
+            displayName={displayName}
+            pendingRequestCount={pendingRequestCount}
+          />
         </div>
       </div>
     </header>

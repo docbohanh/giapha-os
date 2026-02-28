@@ -265,4 +265,33 @@ export async function rejectEditRequest(requestId: string, adminNote?: string) {
   revalidatePath("/dashboard/admin/requests");
   revalidatePath("/dashboard/requests");
 }
+export async function deleteEditRequest(requestId: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Chỉ admin mới có quyền xoá yêu cầu.");
+  }
+
+  const { error } = await supabase
+    .from("edit_requests")
+    .delete()
+    .eq("id", requestId);
+
+  if (error) throw new Error("Lỗi khi xoá yêu cầu: " + error.message);
+
+  revalidatePath("/dashboard/admin/requests");
+  revalidatePath("/dashboard/requests");
+}

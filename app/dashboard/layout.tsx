@@ -42,6 +42,8 @@ export default async function DashboardLayout({
     pendingRequestCount = count ?? 0;
   }
 
+  const displayName = user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name;
+
   if (!profile?.is_active) {
     return (
       <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans">
@@ -97,7 +99,12 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col font-sans">
-      <DashboardHeader isAdmin={isAdmin} userEmail={user.email} pendingRequestCount={pendingRequestCount} />
+      <DashboardHeader
+        isAdmin={isAdmin}
+        userEmail={user.email}
+        displayName={displayName}
+        pendingRequestCount={pendingRequestCount}
+      />
       {children}
       <Footer
         className="mt-auto bg-white border-t border-stone-200"
