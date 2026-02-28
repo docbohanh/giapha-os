@@ -114,6 +114,14 @@ export default function HeaderMenu({ isAdmin, userEmail, pendingRequestCount = 0
                   Yêu cầu chỉnh sửa
                 </Link>
               )}
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer border-t border-stone-100 mt-1"
+              >
+                <UserCircle className="w-4 h-4" />
+                Thông tin cá nhân
+              </Link>
               <LogoutButton />
             </div>
           </motion.div>
