@@ -8,7 +8,12 @@ import {
   formatDisplayDate,
   getLunarDateString,
 } from "@/utils/dateHelpers";
-import { setDefaultRootNode, setUserRootNode, updateMemberNote } from "@/app/actions/member";
+import {
+  setDefaultRootNode,
+  setUserRootNode,
+  updateMemberNote,
+} from "@/app/actions/member";
+import CommentSection from "@/components/CommentSection";
 import SubmitEditRequestModal from "@/components/SubmitEditRequestModal";
 import { motion, Variants } from "framer-motion";
 import {
@@ -432,6 +437,11 @@ export default function MemberDetailContent({
           </div>
         </div>
       </motion.div>
+
+      <CommentSection
+        memberId={person.id}
+        isAdmin={isAdmin}
+      />
 
       <SubmitEditRequestModal
         isOpen={editModalOpen}

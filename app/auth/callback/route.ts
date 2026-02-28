@@ -11,8 +11,24 @@ export async function GET(request: Request) {
     if (code) {
         const cookieStore = await cookies();
         const supabase = createClient(cookieStore);
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) {
+        const { data: { user }, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error && user) {
+            // Sync metadata to profiles table
+            const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.user_metadata?.display_name;
+            const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+
+            if (fullName || avatarUrl) {
+                // Use upsert to create or update profile
+                await supabase
+                    .from("profiles")
+                    .upsert({
+                        id: user.id,
+                        full_name: fullName,
+                        avatar_url: avatarUrl,
+                        updated_at: new Date().toISOString(),
+                    }, { onConflict: 'id' });
+            }
+
             const forwardedHost = request.headers.get("x-forwarded-host"); // autorendered by Vercel
             const isLocalEnv = process.env.NODE_ENV === "development";
             if (isLocalEnv) {

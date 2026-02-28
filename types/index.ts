@@ -11,6 +11,8 @@ export interface Profile {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  full_name?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface AdminUserData {
@@ -85,4 +87,19 @@ export interface UserRootNode {
   root_node_id: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserComment {
+  id: string;
+  member_id: string;
+  user_id: string;
+  parent_id: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: {
+    full_name: string;
+    avatar_url: string | null;
+  } | null;
+  replies?: UserComment[];
 }
