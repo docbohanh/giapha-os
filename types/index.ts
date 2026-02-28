@@ -79,3 +79,10 @@ export interface EditRequest {
   persons?: { full_name: string } | null;
   user_email?: string | null;
 }
+
+export interface UserRootNode {
+  user_id: string;
+  root_node_id: string;
+  created_at: string;
+  updated_at: string;
+}

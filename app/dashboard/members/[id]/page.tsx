@@ -54,6 +54,14 @@ export default async function MemberDetailPage({ params }: PageProps) {
     privateData = data;
   }
 
+  // Fetch Personal Root ID
+  const { data: userRootData } = await supabase
+    .from("user_root_node")
+    .select("root_node_id")
+    .eq("user_id", user.id)
+    .single();
+  const userSavedRootId = userRootData?.root_node_id || null;
+
   return (
     <div className="flex-1 w-full relative flex flex-col pb-8">
       {/* Decorative background blurs */}
@@ -90,6 +98,7 @@ export default async function MemberDetailPage({ params }: PageProps) {
             privateData={privateData}
             isAdmin={isAdmin}
             isUser={isUser}
+            userSavedRootId={userSavedRootId}
           />
         </div>
       </main>

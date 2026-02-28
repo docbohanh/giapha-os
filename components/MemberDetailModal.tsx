@@ -26,6 +26,7 @@ export default function MemberDetailModal() {
     string,
     unknown
   > | null>(null);
+  const [userSavedRootId, setUserSavedRootId] = useState<string | null>(null);
 
   // Close modal by removing query parameter while keeping others
   const closeModal = () => {
@@ -52,6 +53,14 @@ export default function MemberDetailModal() {
             currentIsAdmin = profile?.role === "admin";
             setIsAdmin(currentIsAdmin);
             setIsUser(!!profile?.is_active);
+
+            // Fetch Personal Root ID
+            const { data: rootData } = await supabase
+              .from("user_root_node")
+              .select("root_node_id")
+              .eq("user_id", user.id)
+              .single();
+            setUserSavedRootId(rootData?.root_node_id || null);
           }
           setAuthChecked(true);
         }
@@ -186,6 +195,7 @@ export default function MemberDetailModal() {
                   privateData={privateData}
                   isAdmin={isAdmin}
                   isUser={isUser}
+                  userSavedRootId={userSavedRootId}
                   onLinkClick={closeModal}
                 />
               </div>

@@ -6,6 +6,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import GuestTreeSection from "./GuestTreeSection";
+import { DashboardProvider } from "./DashboardContext";
+import MemberDetailModal from "./MemberDetailModal";
+import { usePathname } from "next/navigation";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -97,102 +100,76 @@ interface LandingHeroProps {
   persons: import("@/types").Person[];
   relationships: import("@/types").Relationship[];
   isLoggedIn?: boolean;
+  userRootId?: string;
 }
 
-export default function LandingHero({ siteName, persons, relationships, isLoggedIn }: LandingHeroProps) {
-  return (
-    <>
+export default function LandingHero({ siteName, persons, relationships, isLoggedIn, userRootId }: LandingHeroProps) {
+  const content = (
+    <motion.div
+      className="max-w-7xl text-center space-y-12 w-full relative z-10"
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainer}
+    >
       <motion.div
-        className="max-w-7xl text-center space-y-12 w-full relative z-10"
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
+        className="space-y-6 sm:space-y-8 flex flex-col items-center"
+        variants={fadeIn}
       >
         <motion.div
-          className="space-y-6 sm:space-y-8 flex flex-col items-center"
-          variants={fadeIn}
+          whileHover={{ scale: 1.05 }}
+          className="relative overflow-hidden rounded-2xl group w-full max-w-2xl"
         >
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="relative overflow-hidden rounded-2xl group w-full max-w-2xl"
-          >
-            <Image
-              src="/lahuutoc_ok.png"
-              alt="La Hữu Tộc"
-              width={640}
-              height={320}
-              className="object-contain w-full h-auto"
-              priority
-            />
-            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-          </motion.div>
-
-          {/* <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5rem] font-serif font-bold text-stone-900 tracking-tight leading-[1.1] max-w-4xl">
-            <span className="block">{siteName}</span>
-          </h1> */}
-
-          <FamilyHistoryExcerpt />
+          <Image
+            src="/lahuutoc_ok.png"
+            alt="La Hữu Tộc"
+            width={640}
+            height={320}
+            className="object-contain w-full h-auto"
+            priority
+          />
+          <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
         </motion.div>
 
-        <motion.div
-          className="pt-6 flex flex-col gap-6 items-center w-full px-4 sm:px-0 relative"
-          variants={fadeIn}
-        >
-          {/* Guest read-only tree preview */}
-          <GuestTreeSection persons={persons} relationships={relationships} isLoggedIn={isLoggedIn} />
-
-          {/* Login CTA */}
-          <div className="relative flex justify-center w-full">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-16 bg-amber-500/30 blur-2xl rounded-full z-0 hidden sm:block"></div>
-            <Link
-              href={isLoggedIn ? "/dashboard" : "/login"}
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 sm:px-10 sm:py-5 text-base sm:text-lg font-bold text-white bg-stone-900 border border-stone-800 hover:bg-stone-800 hover:border-stone-700 rounded-2xl shadow-xl shadow-stone-900/10 hover:shadow-2xl hover:shadow-stone-900/20 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 cursor-pointer w-full sm:w-auto overflow-hidden relative"
-            >
-              <span className="relative z-10 flex items-center gap-3">
-                {isLoggedIn ? "Xem chi tiết" : "Đăng nhập"}
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
-              </span>
-            </Link>
-          </div>
-        </motion.div>
-
-        {/* <motion.div
-          className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-left  border-t border-stone-200/50 relative"
-          variants={staggerContainer}
-        >
-          {[
-            {
-              icon: <Users className="w-6 h-6 text-amber-700" />,
-              title: "Quản lý Thành viên",
-              desc: "Cập nhật thông tin chi tiết, tiểu sử và hình ảnh của từng thành viên trong dòng họ một cách nhanh chóng và bảo mật.",
-            },
-            {
-              icon: <Network className="w-6 h-6 text-amber-700" />,
-              title: "Sơ đồ Sáng tạo",
-              desc: "Xem trực quan sơ đồ phả hệ, thế hệ và mối quan hệ gia đình với giao diện cây hiện đại, dễ thao tác.",
-            },
-          ].map((feature, idx) => (
-            <motion.div
-              key={idx}
-              variants={fadeIn}
-              whileHover={{ y: -5 }}
-              className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:bg-white transition-all duration-500 flex flex-col items-start group relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-amber-100/50 to-transparent rounded-bl-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-              <div className="p-3.5 bg-white rounded-2xl mb-6 shadow-sm ring-1 ring-stone-100 group-hover:scale-110 group-hover:shadow-md transition-all duration-300 relative z-10">
-                {feature.icon}
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-stone-800 mb-3 font-sans relative z-10 group-hover:text-amber-900 transition-colors">
-                {feature.title}
-              </h3>
-              <p className="text-stone-600 text-base leading-relaxed relative z-10">
-                {feature.desc}
-              </p>
-            </motion.div>
-          ))}
-        </motion.div> */}
+        <FamilyHistoryExcerpt />
       </motion.div>
-    </>
+
+      <motion.div
+        className="pt-6 flex flex-col gap-6 items-center w-full px-4 sm:px-0 relative"
+        variants={fadeIn}
+      >
+        {/* Guest read-only tree preview */}
+        <GuestTreeSection
+          persons={persons}
+          relationships={relationships}
+          isLoggedIn={isLoggedIn}
+          userRootId={userRootId}
+        />
+
+        {/* Login CTA */}
+        <div className="relative flex justify-center w-full">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-16 bg-amber-500/30 blur-2xl rounded-full z-0 hidden sm:block"></div>
+          <Link
+            href={isLoggedIn ? "/dashboard" : "/login"}
+            className="group inline-flex items-center justify-center gap-2 px-8 py-4 sm:px-10 sm:py-5 text-base sm:text-lg font-bold text-white bg-stone-900 border border-stone-800 hover:bg-stone-800 hover:border-stone-700 rounded-2xl shadow-xl shadow-stone-900/10 hover:shadow-2xl hover:shadow-stone-900/20 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 cursor-pointer w-full sm:w-auto overflow-hidden relative"
+          >
+            <span className="relative z-10 flex items-center gap-3">
+              {isLoggedIn ? "Xem chi tiết" : "Đăng nhập"}
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+            </span>
+          </Link>
+        </div>
+      </motion.div>
+    </motion.div>
   );
+
+  if (isLoggedIn) {
+    return (
+      <DashboardProvider>
+        {content}
+        <MemberDetailModal />
+      </DashboardProvider>
+    );
+  }
+
+  return content;
 }

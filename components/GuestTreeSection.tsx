@@ -11,6 +11,7 @@ interface GuestTreeSectionProps {
     persons: Person[];
     relationships: Relationship[];
     isLoggedIn?: boolean;
+    userRootId?: string;
 }
 
 /**
@@ -22,6 +23,7 @@ export default function GuestTreeSection({
     persons,
     relationships,
     isLoggedIn,
+    userRootId,
 }: GuestTreeSectionProps) {
     const [view, setView] = useState<"tree" | "mindmap">("tree");
     const [scale, setScale] = useState(1);
@@ -43,18 +45,22 @@ export default function GuestTreeSection({
                 .map((r) => r.person_b),
         );
 
+        const userRoot = userRootId ? persons.find((p) => p.id === userRootId) : null;
         const defaultRoot = persons.find((p) => p.is_default_root_node === true);
         const rootPersons = persons.filter((p) => !childIds.has(p.id));
         const firstMaleRoot = rootPersons.find((p) => p.gender === "male");
-        const finalRoots = defaultRoot
-            ? [defaultRoot]
-            : firstMaleRoot
-                ? [firstMaleRoot]
-                : rootPersons.length > 0
-                    ? [rootPersons[0]]
-                    : persons.length > 0
-                        ? [persons[0]]
-                        : [];
+
+        const finalRoots = userRoot
+            ? [userRoot]
+            : defaultRoot
+                ? [defaultRoot]
+                : firstMaleRoot
+                    ? [firstMaleRoot]
+                    : rootPersons.length > 0
+                        ? [rootPersons[0]]
+                        : persons.length > 0
+                            ? [persons[0]]
+                            : [];
 
         // Tính số đời: BFS từ TẤT CẢ root node trong DB (không phụ thuộc default root)
         const childrenMap = new Map<string, string[]>();

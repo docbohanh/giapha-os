@@ -8,7 +8,7 @@ import {
   formatDisplayDate,
   getLunarDateString,
 } from "@/utils/dateHelpers";
-import { setDefaultRootNode, updateMemberNote } from "@/app/actions/member";
+import { setDefaultRootNode, setUserRootNode, updateMemberNote } from "@/app/actions/member";
 import SubmitEditRequestModal from "@/components/SubmitEditRequestModal";
 import { motion, Variants } from "framer-motion";
 import {
@@ -35,6 +35,7 @@ interface MemberDetailContentProps {
   privateData: Record<string, unknown> | null;
   isAdmin: boolean;
   isUser?: boolean;
+  userSavedRootId?: string | null;
   onLinkClick?: () => void;
 }
 
@@ -43,6 +44,7 @@ export default function MemberDetailContent({
   privateData,
   isAdmin,
   isUser = false,
+  userSavedRootId = null,
   onLinkClick,
 }: MemberDetailContentProps) {
   const fullPerson = { ...person, ...privateData };
@@ -144,40 +146,67 @@ export default function MemberDetailContent({
                 )}
               </h1>
 
-              {isAdmin && person.gender === "male" && (
-                <button
-                  disabled={isPending || isCurrentRoot}
-                  onClick={() => {
-                    startTransition(async () => {
-                      await setDefaultRootNode(person.id);
-                      router.push(`/dashboard?rootId=${person.id}`);
-                      onLinkClick?.();
-                    });
-                  }}
-                  className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors shadow-sm ${isCurrentRoot
-                    ? "text-emerald-700 bg-emerald-50 border-emerald-200/60 cursor-default"
-                    : isPending
-                      ? "text-amber-500 bg-amber-50 border-amber-200/60 cursor-wait"
-                      : "text-amber-700 bg-amber-50 border-amber-200/60 hover:bg-amber-100 hover:border-amber-300 cursor-pointer"
-                    }`}
-                  title="Đặt làm gốc mặc định của cây gia phả"
-                >
-                  {isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : isCurrentRoot ? ("✅ ") : ("🌳 ")}
-                  {isCurrentRoot ? " Đang là gốc cây" : isPending ? " Đang đặt..." : " Đặt làm gốc cây"}
-                </button>
-              )}
+              <div className="flex flex-wrap gap-2 mt-3">
+                {isAdmin && person.gender === "male" && (
+                  <button
+                    disabled={isPending || isCurrentRoot}
+                    onClick={() => {
+                      startTransition(async () => {
+                        await setDefaultRootNode(person.id);
+                        router.push(`/dashboard?rootId=${person.id}`);
+                        onLinkClick?.();
+                      });
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors shadow-sm ${isCurrentRoot
+                      ? "text-emerald-700 bg-emerald-50 border-emerald-200/60 cursor-default"
+                      : isPending
+                        ? "text-amber-500 bg-amber-50 border-amber-200/60 cursor-wait"
+                        : "text-amber-700 bg-emerald-50 border-emerald-200/60 hover:bg-emerald-100 hover:border-emerald-300 cursor-pointer"
+                      }`}
+                    title="Đặt làm gốc mặc định cho TẤT CẢ mọi người"
+                  >
+                    {isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : isCurrentRoot ? ("✅ ") : ("🌍 ")}
+                    {isCurrentRoot ? " Đang là gốc mặc định" : isPending ? " Đang đặt..." : " Đặt làm gốc hệ thống"}
+                  </button>
+                )}
 
-              {isUser && !isAdmin && (
-                <button
-                  onClick={() => setEditModalOpen(true)}
-                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-200/60 text-amber-700 bg-amber-50 hover:bg-amber-100 hover:border-amber-300 cursor-pointer transition-colors shadow-sm"
-                >
-                  <ClipboardEdit className="w-3.5 h-3.5" />
-                  Yêu cầu chỉnh sửa
-                </button>
-              )}
+                {isUser && person.gender === "male" && (
+                  <button
+                    disabled={isPending || userSavedRootId === person.id}
+                    onClick={() => {
+                      startTransition(async () => {
+                        await setUserRootNode(person.id);
+                        router.push(`/dashboard?rootId=${person.id}`);
+                        onLinkClick?.();
+                      });
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors shadow-sm ${userSavedRootId === person.id
+                      ? "text-emerald-700 bg-emerald-50 border-emerald-200/60 cursor-default"
+                      : isPending
+                        ? "text-amber-500 bg-amber-50 border-amber-200/60 cursor-wait"
+                        : "text-amber-700 bg-amber-50 border-amber-200/60 hover:bg-amber-100 hover:border-amber-300 cursor-pointer"
+                      }`}
+                    title="Đặt làm gốc cây cho riêng bạn"
+                  >
+                    {isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : userSavedRootId === person.id ? ("✅ ") : ("🌳 ")}
+                    {userSavedRootId === person.id ? " Đang là gốc của tôi" : isPending ? " Đang đặt..." : " Đặt làm gốc của tôi"}
+                  </button>
+                )}
+
+                {isUser && !isAdmin && (
+                  <button
+                    onClick={() => setEditModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-200 text-stone-700 bg-white hover:bg-stone-50 cursor-pointer transition-colors shadow-sm"
+                  >
+                    <ClipboardEdit className="w-3.5 h-3.5" />
+                    Yêu cầu chỉnh sửa
+                  </button>
+                )}
+              </div>
 
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                 {/* Birth Card */}

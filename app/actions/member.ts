@@ -103,6 +103,35 @@ export async function setDefaultRootNode(memberId: string) {
   revalidatePath("/");
 }
 
+export async function setUserRootNode(memberId: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { error } = await supabase
+    .from("user_root_node")
+    .upsert({
+      user_id: user.id,
+      root_node_id: memberId,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: "user_id"
+    });
+
+  if (error) {
+    console.error("Error setting user root node:", error);
+    throw new Error("Lỗi khi đặt gốc cây cá nhân.");
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+}
+
 export async function updateMemberNote(memberId: string, note: string) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);

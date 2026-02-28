@@ -4,6 +4,7 @@ import LandingHero from "@/components/LandingHero";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import config from "./config";
+import { Suspense } from "react";
 
 export default async function HomePage() {
   const { persons, relationships } = await getPublicFamilyData();
@@ -14,6 +15,19 @@ export default async function HomePage() {
     data: { user },
   } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
+
+  // Fetch user root node if logged in
+  let userRootId: string | undefined;
+  if (user) {
+    const { data: userRootData } = await supabase
+      .from("user_root_node")
+      .select("root_node_id")
+      .eq("user_id", user.id)
+      .single();
+    if (userRootData) {
+      userRootId = userRootData.root_node_id;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#fafaf9] flex flex-col selection:bg-amber-200 selection:text-amber-900 relative overflow-hidden">
@@ -27,12 +41,15 @@ export default async function HomePage() {
       </div>
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-20 md:py-32 relative z-10 w-full">
-        <LandingHero
-          siteName={config.siteName}
-          persons={persons}
-          relationships={relationships}
-          isLoggedIn={isLoggedIn}
-        />
+        <Suspense fallback={<div className="h-[600px] w-full flex items-center justify-center text-stone-400">Đang tải sơ đồ...</div>}>
+          <LandingHero
+            siteName={config.siteName}
+            persons={persons}
+            relationships={relationships}
+            isLoggedIn={isLoggedIn}
+            userRootId={userRootId}
+          />
+        </Suspense>
       </main>
 
       <Footer className="bg-transparent relative z-10 border-none" />

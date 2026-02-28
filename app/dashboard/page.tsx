@@ -42,19 +42,31 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
   let finalRootId = rootId;
 
   if (!finalRootId) {
-    const defaultRootPerson = persons.find((p) => p.is_default_root_node === true);
-    if (defaultRootPerson) {
-      finalRootId = defaultRootPerson.id;
+    // 1. Kiểm tra gốc cây cá nhân
+    const { data: userRootNode } = await supabase
+      .from("user_root_node")
+      .select("root_node_id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (userRootNode) {
+      finalRootId = userRootNode.root_node_id;
     } else {
-      // Fallback: người nam đầu tiên không có cha
-      const childIds = new Set(
-        relationships
-          .filter((r) => r.type === "biological_child" || r.type === "adopted_child")
-          .map((r) => r.person_b),
-      );
-      const rootPersons = persons.filter((p) => !childIds.has(p.id));
-      const firstMaleRoot = rootPersons.find((p) => p.gender === "male");
-      finalRootId = firstMaleRoot?.id ?? rootPersons[0]?.id ?? persons[0]?.id;
+      // 2. Fallback: Gốc cây mặc định hệ thống
+      const defaultRootPerson = persons.find((p) => p.is_default_root_node === true);
+      if (defaultRootPerson) {
+        finalRootId = defaultRootPerson.id;
+      } else {
+        // 3. Fallback cuối cùng: người nam đầu tiên không có cha
+        const childIds = new Set(
+          relationships
+            .filter((r) => r.type === "biological_child" || r.type === "adopted_child")
+            .map((r) => r.person_b),
+        );
+        const rootPersons = persons.filter((p) => !childIds.has(p.id));
+        const firstMaleRoot = rootPersons.find((p) => p.gender === "male");
+        finalRootId = firstMaleRoot?.id ?? rootPersons[0]?.id ?? persons[0]?.id;
+      }
     }
   }
 
