@@ -9,6 +9,10 @@ interface DashboardState {
   setMemberModalId: (id: string | null) => void;
   showAvatar: boolean;
   setShowAvatar: (show: boolean) => void;
+  hideSpouses: boolean;
+  setHideSpouses: (hide: boolean) => void;
+  hideFemales: boolean;
+  setHideFemales: (hide: boolean) => void;
   view: ViewMode;
   setView: (view: ViewMode) => void;
   rootId: string | null;
@@ -25,6 +29,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const [memberModalId, setMemberModalId] = useState<string | null>(null);
   const [showAvatar, setShowAvatar] = useState<boolean>(true);
+  const [hideSpouses, setHideSpouses] = useState<boolean>(false);
+  const [hideFemales, setHideFemales] = useState<boolean>(false);
   const [view, setViewState] = useState<ViewMode>("tree");
   const [rootId, setRootIdState] = useState<string | null>(null);
   const [treeStats, setTreeStats] = useState<{ totalMembers: number; generations: number }>({ totalMembers: 0, generations: 0 });
@@ -33,6 +39,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const avatarParam = searchParams.get("avatar");
     setShowAvatar(avatarParam !== "hide");
+
+    const spousesParam = searchParams.get("spouses");
+    setHideSpouses(spousesParam === "hide");
+
+    const femalesParam = searchParams.get("females");
+    setHideFemales(femalesParam === "hide");
 
     const viewParam = searchParams.get("view") as ViewMode;
     if (viewParam) setViewState(viewParam);
@@ -83,6 +95,32 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateHideSpouses = (hide: boolean) => {
+    setHideSpouses(hide);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      if (hide) {
+        newUrl.searchParams.set("spouses", "hide");
+      } else {
+        newUrl.searchParams.delete("spouses");
+      }
+      window.history.replaceState(null, "", newUrl.toString());
+    }
+  };
+
+  const updateHideFemales = (hide: boolean) => {
+    setHideFemales(hide);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      if (hide) {
+        newUrl.searchParams.set("females", "hide");
+      } else {
+        newUrl.searchParams.delete("females");
+      }
+      window.history.replaceState(null, "", newUrl.toString());
+    }
+  };
+
   const setView = (v: ViewMode) => {
     setViewState(v);
     if (typeof window !== "undefined") {
@@ -112,6 +150,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         setMemberModalId: updateModalId,
         showAvatar,
         setShowAvatar: updateAvatar,
+        hideSpouses,
+        setHideSpouses: updateHideSpouses,
+        hideFemales,
+        setHideFemales: updateHideFemales,
         view,
         setView,
         rootId,
@@ -135,6 +177,10 @@ export function useDashboard(): DashboardState {
       setMemberModalId: () => { },
       showAvatar: true,
       setShowAvatar: () => { },
+      hideSpouses: false,
+      setHideSpouses: () => { },
+      hideFemales: false,
+      setHideFemales: () => { },
       view: "tree",
       setView: () => { },
       rootId: null,

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import { Person, Relationship } from "@/types";
 import FamilyNodeCard from "./FamilyNodeCard";
+import { useDashboard } from "./DashboardContext";
 
 interface SpouseData {
   person: Person;
@@ -34,6 +35,8 @@ export default function FamilyTree({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [scrollStart, setScrollStart] = useState({ left: 0, top: 0 });
   const [internalScale, setInternalScale] = useState(1);
+
+  const { hideSpouses, hideFemales } = useDashboard();
   const MIN_SCALE = 0.3;
   const MAX_SCALE = 2;
 
@@ -144,7 +147,12 @@ export default function FamilyTree({
           note: r.note,
         };
       })
-      .filter((s) => s.person);
+      .filter((s) => s.person)
+      .filter((s) => {
+        if (hideSpouses) return false;
+        if (hideFemales && s.person.gender === "female") return false;
+        return true;
+      });
 
     const childRels = relationships
       .filter(
@@ -162,7 +170,11 @@ export default function FamilyTree({
 
     const childrenList = childRels
       .map((r) => personsMap.get(r.person_b))
-      .filter(Boolean) as Person[];
+      .filter((p) => {
+        if (!p) return false;
+        if (hideFemales && p.gender === "female") return false;
+        return true;
+      }) as Person[];
 
     // If there is only one spouse, or NO spouse, we can just lump all children together.
     // Standard family trees often combine all children under the main node
@@ -178,6 +190,10 @@ export default function FamilyTree({
   const renderTreeNode = (personId: string, isRoot: boolean = false): React.ReactNode => {
     const data = getTreeData(personId);
     if (!data.person) return null;
+
+    // Skip rendering this node if it's female and hideFemales is active
+    if (hideFemales && data.person.gender === "female") return null;
+
     const generation = generationMap.get(personId);
 
     return (
@@ -187,7 +203,7 @@ export default function FamilyTree({
           <div className="flex relative z-10 bg-white rounded-2xl shadow-md border border-stone-200/80 transition-opacity">
             {/* Show generation only at root level, centered above the entire joint container */}
             {isRoot && generation !== undefined && (
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 no-export">
                 <span className="inline-block px-2 py-1 rounded-full text-[8px] sm:text-[10px] font-bold bg-amber-100 text-stone-900 border border-stone-200 shadow-md leading-none whitespace-nowrap">
                   Đời thứ {generation}
                 </span>

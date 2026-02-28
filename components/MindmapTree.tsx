@@ -20,7 +20,7 @@ export default function MindmapTree({
   relationships,
   roots,
 }: MindmapTreeProps) {
-  const { showAvatar, setMemberModalId } = useDashboard();
+  const { showAvatar, setMemberModalId, hideSpouses, hideFemales } = useDashboard();
 
   // Helper function to resolve tree connections for a person
   const getTreeData = (personId: string) => {
@@ -37,7 +37,12 @@ export default function MindmapTree({
           note: r.note,
         };
       })
-      .filter((s) => s.person);
+      .filter((s) => s.person)
+      .filter((s) => {
+        if (hideSpouses) return false;
+        if (hideFemales && s.person.gender === "female") return false;
+        return true;
+      });
 
     const childRels = relationships.filter(
       (r) =>
@@ -47,7 +52,11 @@ export default function MindmapTree({
 
     const childrenList = childRels
       .map((r) => personsMap.get(r.person_b))
-      .filter(Boolean) as Person[];
+      .filter((p) => {
+        if (!p) return false;
+        if (hideFemales && p.gender === "female") return false;
+        return true;
+      }) as Person[];
 
     return {
       person: personsMap.get(personId)!,
@@ -66,9 +75,11 @@ export default function MindmapTree({
     isLast?: boolean;
   }) => {
     const data = getTreeData(personId);
-    const [isExpanded, setIsExpanded] = useState(level < 2);
-
     if (!data.person) return null;
+
+    if (hideFemales && data.person.gender === "female") return null;
+
+    const [isExpanded, setIsExpanded] = useState(level < 2);
 
     const hasChildren = data.children.length > 0;
 

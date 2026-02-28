@@ -38,6 +38,12 @@ export default function ExportButton() {
         pixelRatio: 2,
         width: element.scrollWidth,
         height: element.scrollHeight,
+        filter: (node: HTMLElement) => {
+          if (node.classList && node.classList.contains("no-export")) {
+            return false;
+          }
+          return true;
+        },
         style: {
           transform: "scale(1)",
           transformOrigin: "top left",

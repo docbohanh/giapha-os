@@ -146,7 +146,7 @@ export default function LandingHero({ siteName, persons, relationships, isLogged
         />
 
         {/* Login CTA */}
-        <div className="relative flex justify-center w-full">
+        <div className="relative flex justify-center w-full mt-[56px]">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-16 bg-amber-500/30 blur-2xl rounded-full z-0 hidden sm:block"></div>
           <Link
             href={isLoggedIn ? "/dashboard" : "/login"}
@@ -162,14 +162,10 @@ export default function LandingHero({ siteName, persons, relationships, isLogged
     </motion.div>
   );
 
-  if (isLoggedIn) {
-    return (
-      <DashboardProvider>
-        {content}
-        <MemberDetailModal />
-      </DashboardProvider>
-    );
-  }
-
-  return content;
+  return (
+    <DashboardProvider>
+      {content}
+      {isLoggedIn && <MemberDetailModal />}
+    </DashboardProvider>
+  );
 }

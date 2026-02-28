@@ -1,6 +1,6 @@
 "use client";
 
-import AvatarToggle from "@/components/AvatarToggle";
+import VisibilityToggles from "@/components/VisibilityToggles";
 import { useDashboard } from "@/components/DashboardContext";
 import DashboardMemberList from "@/components/DashboardMemberList";
 import ExportButton from "@/components/ExportButton";
@@ -110,7 +110,7 @@ export default function DashboardViews({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full flex flex-wrap items-center justify-center gap-4 relative z-20">
             <RootSelector persons={persons} currentRootId={activeRootId} />
             <div className="flex items-center gap-2">
-              <AvatarToggle />
+              <VisibilityToggles />
               <ExportButton />
             </div>
           </div>

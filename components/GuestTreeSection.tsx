@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import FamilyTree from "./FamilyTree";
 import MindmapTree from "./MindmapTree";
+import VisibilityToggles from "./VisibilityToggles";
 
 interface GuestTreeSectionProps {
     persons: Person[];
@@ -123,8 +124,8 @@ export default function GuestTreeSection({
         .guest-scroll:hover { scrollbar-color: rgba(0,0,0,0.18) transparent; }
       `}} />
 
-            {/* Tab toggle — centered */}
-            <div className="flex justify-center mb-3">
+            {/* Tab toggle & Visibility toggles — centered */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
                 <div className="flex bg-stone-200/50 p-1 rounded-full border border-stone-200/60 backdrop-blur-sm gap-0.5">
                     {tabs.map((tab) => {
                         const isActive = view === tab.id;
@@ -132,7 +133,7 @@ export default function GuestTreeSection({
                             <button
                                 key={tab.id}
                                 onClick={() => setView(tab.id)}
-                                className={`relative px-3 py-1 text-xs font-semibold rounded-full transition-colors duration-200 flex items-center gap-1.5 cursor-pointer ${isActive ? "text-stone-900" : "text-stone-500 hover:text-stone-700"
+                                className={`relative px-3 py-1.5 text-xs font-semibold rounded-full transition-colors duration-200 flex items-center gap-1.5 cursor-pointer ${isActive ? "text-stone-900" : "text-stone-500 hover:text-stone-700"
                                     }`}
                             >
                                 {isActive && (
@@ -150,6 +151,8 @@ export default function GuestTreeSection({
                         );
                     })}
                 </div>
+
+                <VisibilityToggles />
             </div>
 
             {/* Stats bar */}
@@ -188,7 +191,7 @@ export default function GuestTreeSection({
                     </div>
                 )}
 
-                <div className="guest-scroll overflow-auto min-h-[480px] max-h-[960px] overscroll-contain">
+                <div className="guest-scroll overflow-auto min-h-[480px] max-h-[1280px] overscroll-contain">
                     {view === "tree" ? (
                         <FamilyTree
                             personsMap={personsMap}
