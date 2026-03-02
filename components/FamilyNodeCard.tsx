@@ -40,7 +40,7 @@ export default function FamilyNodeCard({
   const content = (
     <div
       onClick={onClickCard}
-      className={`group py-2 px-1 ${showAvatar ? "w-20 sm:w-24 md:w-28" : "w-8 sm:w-12 md:w-16"} flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer relative bg-white/70 backdrop-blur-md rounded-2xl
+      className={`group py-2 px-3 ${showAvatar ? "min-w-[5rem] sm:min-w-[6rem] md:min-w-[7rem]" : "min-w-[3.5rem] sm:min-w-[4rem] md:min-w-[5rem]"} w-fit max-w-[8rem] sm:max-w-[10rem] md:max-w-[12rem] flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer relative bg-white/70 backdrop-blur-md rounded-2xl
         ${isMainNode && isDeceased ? "grayscale-[0.4] opacity-80" : ""}
       `}
     >
@@ -117,7 +117,7 @@ export default function FamilyNodeCard({
             person.full_name
           ) : (
             person.full_name.split(" ").map((word, index) => (
-              <span key={index} className="block">
+              <span key={index} className="block whitespace-nowrap">
                 {word}
               </span>
             ))

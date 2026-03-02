@@ -158,7 +158,7 @@ export default function AdminRequestList({
                                 className="bg-white/80 backdrop-blur-sm rounded-2xl border border-stone-200/60 shadow-sm overflow-hidden"
                             >
                                 {/* Row */}
-                                <div className="px-5 py-4 flex items-start gap-4">
+                                <div className="px-5 pt-5 pb-2 flex items-start gap-4">
                                     <div className="flex-1 min-w-0 space-y-1.5">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="font-bold text-stone-900 text-sm">
@@ -216,20 +216,30 @@ export default function AdminRequestList({
                                                 <Trash2 className="w-4 h-4" />
                                             )}
                                         </button>
-                                        <button
-                                            onClick={() =>
-                                                setExpandedId(isExpanded ? null : req.id)
-                                            }
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-stone-100 text-stone-500 transition-colors"
-                                        >
-                                            {isExpanded ? (
-                                                <ChevronUp className="w-4 h-4" />
-                                            ) : (
-                                                <ChevronDown className="w-4 h-4" />
-                                            )}
-                                        </button>
+                                        {req.status !== "pending" && (
+                                            <button
+                                                onClick={() =>
+                                                    setExpandedId(isExpanded ? null : req.id)
+                                                }
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-stone-100 text-stone-500 transition-colors"
+                                            >
+                                                {isExpanded ? (
+                                                    <ChevronUp className="w-4 h-4" />
+                                                ) : (
+                                                    <ChevronDown className="w-4 h-4" />
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
+
+                                {req.status === "pending" && (
+                                    <div className="px-5 pb-5">
+                                        <div className="p-3 bg-stone-50 rounded-md border border-stone-100 text-sm text-stone-700 leading-relaxed whitespace-pre-wrap shadow-inner-sm">
+                                            {req.content}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Expanded */}
                                 <AnimatePresence initial={false}>
@@ -247,7 +257,7 @@ export default function AdminRequestList({
                                                     <p className="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1.5">
                                                         Nội dung yêu cầu
                                                     </p>
-                                                    <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed bg-stone-50 rounded-xl px-4 py-3 border border-stone-100">
+                                                    <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed bg-stone-50 rounded-md px-4 py-3 border border-stone-100">
                                                         {req.content}
                                                     </p>
                                                 </div>
@@ -256,7 +266,7 @@ export default function AdminRequestList({
                                                         <p className="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1.5">
                                                             Ghi chú admin
                                                         </p>
-                                                        <p className="text-sm text-stone-600 italic bg-stone-50 rounded-xl px-4 py-3 border border-stone-100">
+                                                        <p className="text-sm text-stone-600 italic bg-stone-50 rounded-md px-4 py-3 border border-stone-100">
                                                             {req.admin_note}
                                                         </p>
                                                     </div>
