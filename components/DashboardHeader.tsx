@@ -8,6 +8,7 @@ interface DashboardHeaderProps {
   isAdmin: boolean;
   userEmail?: string;
   displayName?: string;
+  avatarUrl?: string | null;
   pendingRequestCount?: number;
   children?: React.ReactNode;
 }
@@ -16,6 +17,7 @@ export default function DashboardHeader({
   isAdmin,
   userEmail,
   displayName,
+  avatarUrl,
   pendingRequestCount = 0,
   children,
 }: DashboardHeaderProps) {
@@ -43,6 +45,7 @@ export default function DashboardHeader({
             isAdmin={isAdmin}
             userEmail={userEmail}
             displayName={displayName}
+            avatarUrl={avatarUrl}
             pendingRequestCount={pendingRequestCount}
           />
         </div>

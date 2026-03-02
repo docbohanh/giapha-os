@@ -26,7 +26,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_active, role")
+    .select("is_active, role, avatar_url, full_name")
     .eq("id", user.id)
     .single();
 
@@ -42,7 +42,8 @@ export default async function DashboardLayout({
     pendingRequestCount = count ?? 0;
   }
 
-  const displayName = user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name;
+  const displayName = profile?.full_name || user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name;
+  const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
 
   if (!profile?.is_active) {
     return (
@@ -103,6 +104,7 @@ export default async function DashboardLayout({
         isAdmin={isAdmin}
         userEmail={user.email}
         displayName={displayName}
+        avatarUrl={avatarUrl}
         pendingRequestCount={pendingRequestCount}
       />
       {children}

@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ClipboardCheck, ClipboardList, Database, Settings, UserCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import LogoutButton from "./LogoutButton";
 
@@ -10,10 +11,12 @@ interface HeaderMenuProps {
   isAdmin: boolean;
   userEmail?: string;
   displayName?: string;
+  avatarUrl?: string | null;
   pendingRequestCount?: number;
 }
 
-export default function HeaderMenu({ isAdmin, userEmail, displayName, pendingRequestCount = 0 }: HeaderMenuProps) {
+
+export default function HeaderMenu({ isAdmin, userEmail, displayName, avatarUrl, pendingRequestCount = 0 }: HeaderMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -35,8 +38,17 @@ export default function HeaderMenu({ isAdmin, userEmail, displayName, pendingReq
         className="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full hover:bg-stone-100 transition-all duration-200 cursor-pointer border border-transparent hover:border-stone-200"
       >
         <div className="relative">
-          <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-200 to-amber-100 text-amber-800 flex items-center justify-center font-bold shadow-sm ring-1 ring-amber-300/50">
-            {displayName ? (
+          <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-200 to-amber-100 text-amber-800 flex items-center justify-center font-bold shadow-sm ring-1 ring-amber-300/50 overflow-hidden">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={displayName || "User"}
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+                unoptimized
+              />
+            ) : displayName ? (
               displayName.charAt(0).toUpperCase()
             ) : userEmail ? (
               userEmail.charAt(0).toUpperCase()
@@ -70,7 +82,20 @@ export default function HeaderMenu({ isAdmin, userEmail, displayName, pendingReq
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer border-b border-stone-100 mt-1"
             >
-              <UserCircle className="w-4 h-4" />
+              {avatarUrl ? (
+                <div className="w-5 h-5 rounded-full overflow-hidden border border-stone-200">
+                  <Image
+                    src={avatarUrl}
+                    alt="Profile"
+                    width={20}
+                    height={20}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <UserCircle className="w-4 h-4" />
+              )}
               <p>
                 {displayName || (userEmail && userEmail.split("@")[0])}
               </p>
