@@ -5,7 +5,10 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
-export async function changeUserRole(userId: string, newRole: UserRole) {
+export async function changeUserRole(
+  userId: string,
+  newRole: UserRole,
+): Promise<{ success?: boolean; error?: string }> {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { error } = await supabase.rpc("set_user_role", {
@@ -15,14 +18,16 @@ export async function changeUserRole(userId: string, newRole: UserRole) {
 
   if (error) {
     console.error("Failed to change user role:", error);
-    throw new Error(error.message);
+    return { error: error.message };
   }
 
   revalidatePath("/dashboard/users");
   return { success: true };
 }
 
-export async function deleteUser(userId: string) {
+export async function deleteUser(
+  userId: string,
+): Promise<{ success?: boolean; error?: string }> {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { error } = await supabase.rpc("delete_user", {
@@ -31,14 +36,16 @@ export async function deleteUser(userId: string) {
 
   if (error) {
     console.error("Failed to delete user:", error);
-    throw new Error(error.message);
+    return { error: error.message };
   }
 
   revalidatePath("/dashboard/users");
   return { success: true };
 }
 
-export async function adminCreateUser(formData: FormData) {
+export async function adminCreateUser(
+  formData: FormData,
+): Promise<{ success?: boolean; error?: string }> {
   const email = formData.get("email")?.toString();
   const password = formData.get("password")?.toString();
   const role = formData.get("role")?.toString() || "member";
@@ -46,7 +53,12 @@ export async function adminCreateUser(formData: FormData) {
   const isActive = isActiveStr === "false" ? false : true;
 
   if (!email || !password) {
-    throw new Error("Email và mật khẩu là bắt buộc.");
+    return { error: "Email và mật khẩu là bắt buộc." };
+  }
+
+  // Validate role
+  if (role !== "admin" && role !== "editor" && role !== "member") {
+    return { error: "Vai trò không hợp lệ." };
   }
 
   const cookieStore = await cookies();
@@ -61,14 +73,17 @@ export async function adminCreateUser(formData: FormData) {
 
   if (error) {
     console.error("Failed to create user:", error);
-    throw new Error(error.message);
+    return { error: error.message };
   }
 
   revalidatePath("/dashboard/users");
   return { success: true };
 }
 
-export async function toggleUserStatus(userId: string, newStatus: boolean) {
+export async function toggleUserStatus(
+  userId: string,
+  newStatus: boolean,
+): Promise<{ success?: boolean; error?: string }> {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { error } = await supabase.rpc("set_user_active_status", {
@@ -78,7 +93,7 @@ export async function toggleUserStatus(userId: string, newStatus: boolean) {
 
   if (error) {
     console.error("Failed to change user status:", error);
-    throw new Error(error.message);
+    return { error: error.message };
   }
 
   revalidatePath("/dashboard/users");

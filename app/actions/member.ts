@@ -24,8 +24,8 @@ export async function deleteMemberProfile(memberId: string) {
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin") {
-    throw new Error("Từ chối truy cập. Chỉ admin mới có quyền xoá hồ sơ.");
+  if (profile?.role !== "admin" && profile?.role !== "editor") {
+    throw new Error("Từ chối truy cập. Chỉ admin hoặc editor mới có quyền thực hiện thao tác này.");
   }
 
   // 2. Check for existing relationships

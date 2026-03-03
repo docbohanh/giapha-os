@@ -22,7 +22,11 @@ export default async function NewMemberPage() {
     .eq("id", user.id)
     .single();
 
-  const isAdmin = profile?.role === "admin";
+  const canEdit = profile?.role === "admin" || profile?.role === "editor";
+
+  if (!canEdit) {
+    redirect("/dashboard");
+  }
 
   return (
     <div className="flex-1 w-full relative flex flex-col pb-8">
@@ -43,7 +47,7 @@ export default async function NewMemberPage() {
       </div>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-10 w-full flex-1">
-        <MemberForm isAdmin={isAdmin} />
+        <MemberForm isAdmin={canEdit} />
       </main>
     </div>
   );

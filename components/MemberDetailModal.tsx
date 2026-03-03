@@ -18,7 +18,7 @@ export default function MemberDetailModal() {
   const [error, setError] = useState<string | null>(null);
 
   const [authChecked, setAuthChecked] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
   const [isUser, setIsUser] = useState(false);
 
   const [person, setPerson] = useState<Person | null>(null);
@@ -39,7 +39,7 @@ export default function MemberDetailModal() {
       setError(null);
       try {
         // 1. Check auth / role
-        let currentIsAdmin = isAdmin;
+        let currentCanEdit = canEdit;
         if (!authChecked) {
           const {
             data: { user },
@@ -50,8 +50,8 @@ export default function MemberDetailModal() {
               .select("role, is_active")
               .eq("id", user.id)
               .single();
-            currentIsAdmin = profile?.role === "admin";
-            setIsAdmin(currentIsAdmin);
+            currentCanEdit = profile?.role === "admin" || profile?.role === "editor";
+            setCanEdit(currentCanEdit);
             setIsUser(!!profile?.is_active);
 
             // Fetch Personal Root ID
@@ -77,8 +77,8 @@ export default function MemberDetailModal() {
         }
         setPerson(personData);
 
-        // 3. Fetch Private Data if Admin
-        if (currentIsAdmin) {
+        // 3. Fetch Private Data if canEdit
+        if (currentCanEdit) {
           const { data: privData } = await supabase
             .from("person_details_private")
             .select("*")
@@ -94,7 +94,7 @@ export default function MemberDetailModal() {
         setLoading(false);
       }
     },
-    [isAdmin, authChecked, supabase],
+    [canEdit, authChecked, supabase],
   );
 
   // Sync state with URL parameter
@@ -151,7 +151,7 @@ export default function MemberDetailModal() {
           >
             {/* Sticky Header Actions */}
             <div className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 flex items-center gap-2">
-              {isAdmin && person && (
+              {canEdit && person && (
                 <Link
                   href={`/dashboard/members/${person.id}/edit`}
                   className="flex items-center gap-1.5 px-4 py-2 bg-amber-100/80 backdrop-blur-md text-amber-800 rounded-full hover:bg-amber-200 font-semibold text-sm shadow-sm border border-amber-200/50 transition-colors"
@@ -193,7 +193,7 @@ export default function MemberDetailModal() {
                 <MemberDetailContent
                   person={person}
                   privateData={privateData}
-                  isAdmin={isAdmin}
+                  isAdmin={canEdit}
                   isUser={isUser}
                   userSavedRootId={userSavedRootId}
                   onLinkClick={closeModal}

@@ -7,11 +7,18 @@ import {
   toggleUserStatus,
 } from "@/app/actions/user";
 import { AdminUserData, UserRole } from "@/types";
+import { AnimatePresence, motion } from "framer-motion";
+import { Trash } from "lucide-react";
 import { useState } from "react";
 
 interface AdminUserListProps {
   initialUsers: AdminUserData[];
   currentUserId: string;
+}
+
+interface Notification {
+  message: string;
+  type: "success" | "error" | "info";
 }
 
 export default function AdminUserList({
@@ -22,20 +29,36 @@ export default function AdminUserList({
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [notification, setNotification] = useState<Notification | null>(null);
+
+  const showNotification = (
+    message: string,
+    type: "success" | "error" | "info" = "info",
+  ) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 5000);
+  };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
       setLoadingId(userId);
-      await changeUserRole(userId, newRole);
+      const result = await changeUserRole(userId, newRole);
+
+      if (result?.error) {
+        showNotification(result.error, "error");
+        return;
+      }
+
       setUsers(
         users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)),
       );
+      showNotification("Đã cập nhật vai trò người dùng thành công.", "success");
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        alert("Lỗi khi đổi quyền: " + error.message);
-      } else {
-        alert("Lỗi không xác định khi đổi quyền");
-      }
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Lỗi không xác định khi đổi quyền";
+      showNotification(msg, "error");
     } finally {
       setLoadingId(null);
     }
@@ -44,18 +67,28 @@ export default function AdminUserList({
   const handleStatusChange = async (userId: string, newStatus: boolean) => {
     try {
       setLoadingId(userId);
-      await toggleUserStatus(userId, newStatus);
+      const result = await toggleUserStatus(userId, newStatus);
+
+      if (result?.error) {
+        showNotification(result.error, "error");
+        return;
+      }
+
       setUsers(
         users.map((u) =>
           u.id === userId ? { ...u, is_active: newStatus } : u,
         ),
       );
+      showNotification(
+        `Đã ${newStatus ? "duyệt" : "khoá"} người dùng thành công.`,
+        "success",
+      );
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        alert("Lỗi khi đổi trạng thái: " + error.message);
-      } else {
-        alert("Lỗi không xác định khi đổi trạng thái");
-      }
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Lỗi không xác định khi đổi trạng thái";
+      showNotification(msg, "error");
     } finally {
       setLoadingId(null);
     }
@@ -70,14 +103,21 @@ export default function AdminUserList({
       return;
     try {
       setLoadingId(userId);
-      await deleteUser(userId);
-      setUsers(users.filter((u) => u.id !== userId));
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        alert("Lỗi khi xoá user: " + error.message);
-      } else {
-        alert("Lỗi không xác định khi xoá user");
+      const result = await deleteUser(userId);
+
+      if (result?.error) {
+        showNotification(result.error, "error");
+        return;
       }
+
+      setUsers(users.filter((u) => u.id !== userId));
+      showNotification("Đã xóa người dùng thành công.", "success");
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Lỗi không xác định khi xoá user";
+      showNotification(msg, "error");
     } finally {
       setLoadingId(null);
     }
@@ -88,32 +128,103 @@ export default function AdminUserList({
     setIsCreating(true);
     const formData = new FormData(e.currentTarget);
     try {
-      await adminCreateUser(formData);
-      alert("Tạo người dùng thành công! Họ có thể đăng nhập ngay bây giờ.");
-      setIsCreateModalOpen(false);
-      // Let Server Action revalidate and refresh the page next time,
-      // or we can just reload the page to get the new list.
-      window.location.reload();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        alert("Lỗi khi tạo user: " + error.message);
-      } else {
-        alert("Lỗi không xác định khi tạo user");
+      const result = await adminCreateUser(formData);
+
+      if (result?.error) {
+        showNotification(result.error, "error");
+        return;
       }
+
+      showNotification(
+        "Tạo người dùng thành công! Họ có thể đăng nhập ngay bây giờ.",
+        "success",
+      );
+      setIsCreateModalOpen(false);
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Lỗi không xác định khi tạo user";
+      showNotification(msg, "error");
     } finally {
       setIsCreating(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Animated Toast Notification */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, x: "-50%" }}
+            className={`fixed top-24 left-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg border flex items-center gap-3 min-w-[320px] max-w-[90vw] ${notification.type === "success"
+              ? "bg-emerald-50/90 border-emerald-200 text-emerald-800"
+              : notification.type === "error"
+                ? "bg-red-50/90 border-red-200 text-red-800"
+                : "bg-amber-50/90 border-amber-200 text-amber-800"
+              }`}
+          >
+            {notification.type === "success" && (
+              <svg
+                className="size-5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            )}
+            {notification.type === "error" && (
+              <svg
+                className="size-5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            )}
+            {notification.type === "info" && (
+              <svg
+                className="size-5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            )}
+            <p className="text-sm font-medium">{notification.message}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex justify-end">
         <button
           onClick={() => setIsCreateModalOpen(true)}
           className="bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-5 py-2.5 rounded-xl transition-all duration-300 font-medium text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
         >
           <svg
-            className="w-4 h-4"
+            className="size-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -161,75 +272,73 @@ export default function AdminUserList({
                     {user.email}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.role === "admin"
-                          ? "bg-amber-100 text-amber-800 border border-amber-200"
-                          : "bg-stone-100 text-stone-600 border border-stone-200"
-                        }`}
-                    >
-                      {user.role}
-                    </span>
+                    {user.id === currentUserId ? (
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.role === "admin"
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
+                            : user.role === "editor"
+                              ? "bg-sky-100 text-sky-800 border border-sky-200"
+                              : "bg-stone-100 text-stone-600 border border-stone-200"
+                          }`}
+                      >
+                        {user.role}
+                      </span>
+                    ) : (
+                      <select
+                        value={user.role}
+                        onChange={(e) =>
+                          handleRoleChange(user.id, e.target.value as UserRole)
+                        }
+                        disabled={loadingId === user.id}
+                        className="bg-stone-50 text-stone-700 border border-stone-200 text-xs rounded-md focus:ring-amber-500 focus:border-amber-500 px-2 py-1 hover:border-stone-300 transition-colors disabled:opacity-50 outline-none cursor-pointer"
+                      >
+                        <option value="admin">Admin</option>
+                        <option value="editor">Editor</option>
+                        <option value="member">Member</option>
+                      </select>
+                    )}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.is_active
-                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                          : "bg-red-100 text-red-800 border border-red-200"
-                        }`}
+                    <button
+                      disabled={
+                        loadingId === user.id || user.id === currentUserId
+                      }
+                      onClick={() =>
+                        handleStatusChange(user.id, !user.is_active)
+                      }
+                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium transition-colors ${user.is_active
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                        : "bg-stone-100 text-stone-800 border border-stone-200"
+                        } ${user.id !== currentUserId
+                          ? "hover:opacity-80 cursor-pointer"
+                          : "opacity-50 cursor-not-allowed"
+                        } disabled:opacity-50`}
+                      title={
+                        user.id !== currentUserId
+                          ? user.is_active
+                            ? "Nhấn để khoá"
+                            : "Nhấn để duyệt"
+                          : "Không thể thay đổi trạng thái của chính bạn"
+                      }
                     >
                       {user.is_active ? "Đã duyệt" : "Chờ duyệt"}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-6 py-4 text-stone-500">
                     {new Date(user.created_at).toLocaleDateString("vi-VN")}
                   </td>
-                  <td className="px-6 py-4 text-right space-x-3">
+                  <td className="px-6 py-4 text-right">
                     {user.id !== currentUserId && (
-                      <>
-                        {user.is_active ? (
-                          <button
-                            disabled={loadingId === user.id}
-                            onClick={() => handleStatusChange(user.id, false)}
-                            className="text-stone-600 hover:text-stone-900 font-medium disabled:opacity-50 cursor-pointer"
-                          >
-                            Khoá
-                          </button>
-                        ) : (
-                          <button
-                            disabled={loadingId === user.id}
-                            onClick={() => handleStatusChange(user.id, true)}
-                            className="text-emerald-600 hover:text-emerald-800 font-medium disabled:opacity-50 cursor-pointer"
-                          >
-                            Duyệt
-                          </button>
-                        )}
-
-                        {user.role === "admin" ? (
-                          <button
-                            disabled={loadingId === user.id}
-                            onClick={() => handleRoleChange(user.id, "member")}
-                            className="text-stone-600 hover:text-stone-900 font-medium disabled:opacity-50 cursor-pointer"
-                          >
-                            Hạ quyền
-                          </button>
-                        ) : (
-                          <button
-                            disabled={loadingId === user.id}
-                            onClick={() => handleRoleChange(user.id, "admin")}
-                            className="text-amber-600 hover:text-amber-800 font-medium disabled:opacity-50 cursor-pointer"
-                          >
-                            Lên Admin
-                          </button>
-                        )}
-
+                      <div className="flex justify-end items-center gap-2">
                         <button
+                          title="Xoá người dùng"
                           disabled={loadingId === user.id}
                           onClick={() => handleDelete(user.id)}
-                          className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50 cursor-pointer"
+                          className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 cursor-pointer"
                         >
-                          Xóa
+                          <Trash className="size-4" />
                         </button>
-                      </>
+                      </div>
                     )}
                     {user.id === currentUserId && (
                       <span className="text-stone-400 italic text-xs">Bạn</span>
@@ -240,7 +349,7 @@ export default function AdminUserList({
               {users.length === 0 && (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-6 py-8 text-center text-stone-500"
                   >
                     Không tìm thấy người dùng nào.
@@ -257,15 +366,15 @@ export default function AdminUserList({
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm transition-opacity duration-300">
           <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-stone-200/60 w-full max-w-md overflow-hidden transform transition-all">
             <div className="px-6 py-5 border-b border-stone-100/80 flex justify-between items-center bg-stone-50/50">
-              <h3 className="text-xl font-sans font-bold text-stone-800">
+              <h3 className="text-xl font-serif font-bold text-stone-800">
                 Tạo Người Dùng Mới
               </h3>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-stone-400 hover:text-stone-600 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center hover:bg-stone-100 rounded-full"
+                className="text-stone-400 hover:text-stone-600 transition-colors size-8 flex items-center justify-center hover:bg-stone-100 rounded-full cursor-pointer"
               >
                 <svg
-                  className="w-5 h-5"
+                  className="size-5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -319,6 +428,7 @@ export default function AdminUserList({
                     defaultValue="member"
                   >
                     <option value="member">Thành viên (Member)</option>
+                    <option value="editor">Biên tập (Editor)</option>
                     <option value="admin">Quản trị viên (Admin)</option>
                   </select>
                 </div>

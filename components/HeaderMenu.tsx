@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ClipboardCheck, ClipboardList, Database, Settings, UserCircle } from "lucide-react";
+import { BarChart2, CalendarDays, ChevronDown, ClipboardCheck, ClipboardList, Database, GitMerge, Settings, UserCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -102,6 +102,32 @@ export default function HeaderMenu({ isAdmin, userEmail, displayName, avatarUrl,
             </Link>
 
             <div className="py-1">
+              {/* Feature links visible to all users */}
+              <Link
+                href="/dashboard/events"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
+              >
+                <CalendarDays className="w-4 h-4" />
+                Sự kiện
+              </Link>
+              <Link
+                href="/dashboard/kinship"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
+              >
+                <GitMerge className="w-4 h-4" />
+                Tra cứu danh xưng
+              </Link>
+              <Link
+                href="/dashboard/stats"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
+              >
+                <BarChart2 className="w-4 h-4" />
+                Thống kê
+              </Link>
+              <hr className="border-stone-100 my-1" />
               {isAdmin && (
                 <>
                   <Link

@@ -30,6 +30,7 @@ export default async function MemberDetailPage({ params }: PageProps) {
     .single();
 
   const isAdmin = profile?.role === "admin";
+  const canEdit = isAdmin || profile?.role === "editor";
   const isUser = !!profile?.is_active;
 
   // Fetch Person Public Data
@@ -43,9 +44,9 @@ export default async function MemberDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Fetch Private Data if Admin
+  // Fetch Private Data if canEdit (admin or editor)
   let privateData = null;
-  if (isAdmin) {
+  if (canEdit) {
     const { data } = await supabase
       .from("person_details_private")
       .select("*")
@@ -78,7 +79,7 @@ export default async function MemberDetailPage({ params }: PageProps) {
           </span>
           Quay lại
         </Link>
-        {isAdmin && (
+        {canEdit && (
           <div className="flex items-center gap-2.5">
             <Link
               href={`/dashboard/members/${id}/edit`}
@@ -86,7 +87,7 @@ export default async function MemberDetailPage({ params }: PageProps) {
             >
               Chỉnh sửa
             </Link>
-            <DeleteMemberButton memberId={id} />
+            {isAdmin && <DeleteMemberButton memberId={id} />}
           </div>
         )}
       </div>
@@ -96,7 +97,7 @@ export default async function MemberDetailPage({ params }: PageProps) {
           <MemberDetailContent
             person={person}
             privateData={privateData}
-            isAdmin={isAdmin}
+            isAdmin={canEdit}
             isUser={isUser}
             userSavedRootId={userSavedRootId}
           />
