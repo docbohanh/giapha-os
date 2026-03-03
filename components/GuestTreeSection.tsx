@@ -1,7 +1,7 @@
 "use client";
 
 import { Person, Relationship } from "@/types";
-import { ListTree, Network } from "lucide-react";
+import { ListTree, Network, ZoomIn, ZoomOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import FamilyTree from "./FamilyTree";
@@ -152,6 +152,32 @@ export default function GuestTreeSection({
                     })}
                 </div>
 
+                {/* <div className="flex items-center bg-white/80 backdrop-blur-md shadow-sm border border-stone-200/60 rounded-full p-1 gap-0.5">
+                    <button
+                        onClick={zoomOut}
+                        disabled={scale <= MIN_SCALE}
+                        className="px-3 py-1.5 hover:bg-stone-100/50 text-stone-600 rounded-full transition-colors disabled:opacity-50 cursor-pointer flex items-center"
+                        title="Thu nhỏ"
+                    >
+                        <ZoomOut className="size-3.5" />
+                    </button>
+                    <button
+                        onClick={resetZoom}
+                        className="px-2 py-1.5 hover:bg-stone-100/50 text-stone-600 rounded-full transition-colors text-[11px] sm:text-xs font-medium min-w-[46px] text-center border-x border-stone-200/50 cursor-pointer"
+                        title="Đặt lại"
+                    >
+                        {Math.round(scale * 100)}%
+                    </button>
+                    <button
+                        onClick={zoomIn}
+                        disabled={scale >= MAX_SCALE}
+                        className="px-3 py-1.5 hover:bg-stone-100/50 text-stone-600 rounded-full transition-colors disabled:opacity-50 cursor-pointer flex items-center"
+                        title="Phóng to"
+                    >
+                        <ZoomIn className="size-3.5" />
+                    </button>
+                </div> */}
+
                 <VisibilityToggles />
             </div>
 
@@ -170,38 +196,17 @@ export default function GuestTreeSection({
 
             {/* Tree container */}
             <div className="relative rounded-2xl border border-stone-200/60 bg-white/60 backdrop-blur-md overflow-hidden">
-                {/* Zoom controls — fixed at top-right, above scroll */}
-                {view === "tree" && (
-                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-xl shadow-sm px-2 py-1">
-                        <button
-                            onClick={zoomOut}
-                            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
-                            title="Thu nhỏ"
-                        >−</button>
-                        <button
-                            onClick={resetZoom}
-                            className="px-1.5 h-6 flex items-center justify-center text-xs font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer min-w-[40px]"
-                            title="Đặt lại"
-                        >{Math.round(scale * 100)}%</button>
-                        <button
-                            onClick={zoomIn}
-                            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
-                            title="Phóng to"
-                        >+</button>
-                    </div>
-                )}
+
 
                 <div className="guest-scroll overflow-auto min-h-[480px] max-h-[1280px] overscroll-contain">
                     {view === "tree" ? (
-                        <FamilyTree
-                            personsMap={personsMap}
-                            relationships={relationships}
-                            roots={roots}
-                            externalScale={scale}
-                            onZoomIn={zoomIn}
-                            onZoomOut={zoomOut}
-                            onResetZoom={resetZoom}
-                        />
+                        <div style={{ transform: `scale(${scale})`, transformOrigin: "top center", transition: "transform 0.1s" }}>
+                            <FamilyTree
+                                personsMap={personsMap}
+                                relationships={relationships}
+                                roots={roots}
+                            />
+                        </div>
                     ) : (
                         <MindmapTree
                             personsMap={personsMap}

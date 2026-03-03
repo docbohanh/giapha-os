@@ -20,7 +20,7 @@ export default function MindmapTree({
   relationships,
   roots,
 }: MindmapTreeProps) {
-  const { showAvatar, setMemberModalId, hideSpouses, hideFemales } = useDashboard();
+  const { showAvatar, setMemberModalId, hideSpouses, hideFemales, treeScale } = useDashboard();
 
   // Helper function to resolve tree connections for a person
   const getTreeData = (personId: string) => {
@@ -336,7 +336,11 @@ export default function MindmapTree({
   return (
     <div className="w-full h-full relative p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-140px)] flex justify-start lg:justify-center overflow-x-auto">
       {/* Root Container */}
-      <div id="export-container" className="font-sans min-w-max pb-20 p-8">
+      <div
+        id="export-container"
+        className="font-sans min-w-max pb-20 p-8"
+        style={{ transform: `scale(${treeScale})`, transformOrigin: "top center", transition: "transform 0.1s" }}
+      >
         {roots.map((root, index) => (
           <MindmapNode
             key={root.id}

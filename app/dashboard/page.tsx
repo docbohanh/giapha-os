@@ -28,6 +28,14 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  const canEdit = profile?.role === "admin" || profile?.role === "editor";
+
   const { data: personsData } = await supabase
     .from("persons")
     .select("*")
@@ -97,7 +105,7 @@ export default async function FamilyTreePage({ searchParams }: PageProps) {
   return (
     <DashboardProvider>
       <ViewToggle totalMembers={persons.length} generations={maxGen} />
-      <DashboardViews persons={persons} relationships={relationships} />
+      <DashboardViews persons={persons} relationships={relationships} canEdit={canEdit} />
 
       <MemberDetailModal />
     </DashboardProvider>

@@ -1,10 +1,8 @@
 "use client";
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
-
 import { Person, Relationship } from "@/types";
-import FamilyNodeCard from "./FamilyNodeCard";
 import { useDashboard } from "./DashboardContext";
+import FamilyNodeCard from "./FamilyNodeCard";
 
 interface SpouseData {
   person: Person;
@@ -15,28 +13,15 @@ export default function FamilyTree({
   personsMap,
   relationships,
   roots,
-  externalScale,
-  onZoomIn,
-  onZoomOut,
-  onResetZoom,
+  canEdit,
 }: {
   personsMap: Map<string, Person>;
   relationships: Relationship[];
   roots: Person[];
-  externalScale?: number;
-  onZoomIn?: () => void;
-  onZoomOut?: () => void;
-  onResetZoom?: () => void;
+  canEdit?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isPressed, setIsPressed] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const hasDraggedRef = useRef(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [scrollStart, setScrollStart] = useState({ left: 0, top: 0 });
-  const [internalScale, setInternalScale] = useState(1);
-
-  const { hideSpouses, hideFemales } = useDashboard();
+  const { showAvatar, hideSpouses, hideFemales, hideMales, treeScale, setTreeScale } = useDashboard();
   const MIN_SCALE = 0.3;
   const MAX_SCALE = 2;
 
@@ -47,6 +32,12 @@ export default function FamilyTree({
       el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
     }
   }, [roots]);
+
+  const [isPressed, setIsPressed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const hasDraggedRef = useRef(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [scrollStart, setScrollStart] = useState({ left: 0, top: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsPressed(true);
@@ -97,14 +88,8 @@ export default function FamilyTree({
     if (!e.ctrlKey && !e.metaKey) return; // only zoom on Ctrl+scroll or pinch
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setInternalScale((s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, +(s + delta).toFixed(2))));
+    setTreeScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, +(treeScale + delta).toFixed(2))));
   };
-
-  const isExternalZoom = externalScale !== undefined;
-  const scale = isExternalZoom ? externalScale : internalScale;
-  const zoomIn = isExternalZoom ? (onZoomIn ?? (() => { })) : () => setInternalScale((s) => Math.min(MAX_SCALE, +(s + 0.1).toFixed(2)));
-  const zoomOut = isExternalZoom ? (onZoomOut ?? (() => { })) : () => setInternalScale((s) => Math.max(MIN_SCALE, +(s - 0.1).toFixed(2)));
-  const resetZoom = isExternalZoom ? (onResetZoom ?? (() => { })) : () => setInternalScale(1);
 
   // Build generationMap: personId → số đời (BFS từ tất cả root thực sự trong DB)
   const generationMap = useMemo(() => {
@@ -150,6 +135,7 @@ export default function FamilyTree({
       .filter((s) => s.person)
       .filter((s) => {
         if (hideSpouses) return false;
+        if (hideMales && s.person.gender === "male") return false;
         if (hideFemales && s.person.gender === "female") return false;
         return true;
       });
@@ -172,6 +158,7 @@ export default function FamilyTree({
       .map((r) => personsMap.get(r.person_b))
       .filter((p) => {
         if (!p) return false;
+        if (hideMales && p.gender === "male") return false;
         if (hideFemales && p.gender === "female") return false;
         return true;
       }) as Person[];
@@ -191,7 +178,8 @@ export default function FamilyTree({
     const data = getTreeData(personId);
     if (!data.person) return null;
 
-    // Skip rendering this node if it's female and hideFemales is active
+    // Skip rendering this node if filtered out
+    if (hideMales && data.person.gender === "male") return null;
     if (hideFemales && data.person.gender === "female") return null;
 
     const generation = generationMap.get(personId);
@@ -281,31 +269,9 @@ export default function FamilyTree({
       onMouseLeave={handleMouseUpOrLeave}
       onClickCapture={handleClickCapture}
       onWheel={handleWheel}
-      onDragStart={(e) => e.preventDefault()} // Prevent browser default dragging of links/images
+      onDragStart={(e) => e.preventDefault()}
     >
-      {/* Zoom controls — only shown when not controlled externally */}
-      {!isExternalZoom && (
-        <div className="sticky top-2 left-0 w-full z-20 flex justify-center pointer-events-none">
-          <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-xl shadow-sm px-2 py-1 pointer-events-auto">
-            <button
-              onClick={zoomOut}
-              className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
-              title="Thu nhỏ"
-            >−</button>
-            <button
-              onClick={resetZoom}
-              className="px-1.5 h-6 flex items-center justify-center text-xs font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer min-w-[40px]"
-              title="Đặt lại"
-            >{Math.round(scale * 100)}%</button>
-            <button
-              onClick={zoomIn}
-              className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors text-base font-bold leading-none cursor-pointer"
-              title="Phóng to"
-            >+</button>
-          </div>
-        </div>
-      )}
-      {/* We use a style block to inject the CSS logic for the family tree lines */}
+      {/* CSS for tree connecting lines */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -383,15 +349,10 @@ export default function FamilyTree({
         }}
       />
 
-      {/* 
-        Use w-max to prevent wrapping and allow scrolling. 
-        mx-auto centers it if smaller than screen. 
-        p-8 adds padding inside scroll area.
-      */}
       <div
         id="export-container"
         className={`w-max min-w-full mx-auto p-4 css-tree transition-opacity duration-200 ${isDragging ? "opacity-90" : ""}`}
-        style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
+        style={{ transform: `scale(${treeScale})`, transformOrigin: "top center" }}
       >
         <ul>
           {roots.map((root) => (

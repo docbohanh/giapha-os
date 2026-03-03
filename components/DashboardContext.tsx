@@ -13,12 +13,16 @@ interface DashboardState {
   setHideSpouses: (hide: boolean) => void;
   hideFemales: boolean;
   setHideFemales: (hide: boolean) => void;
+  hideMales: boolean;
+  setHideMales: (hide: boolean) => void;
   view: ViewMode;
   setView: (view: ViewMode) => void;
   rootId: string | null;
   setRootId: (id: string | null) => void;
   treeStats: { totalMembers: number; generations: number };
   setTreeStats: (stats: { totalMembers: number; generations: number }) => void;
+  treeScale: number;
+  setTreeScale: (scale: number) => void;
 }
 
 export const DashboardContext = createContext<DashboardState | undefined>(
@@ -30,10 +34,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [memberModalId, setMemberModalId] = useState<string | null>(null);
   const [showAvatar, setShowAvatar] = useState<boolean>(true);
   const [hideSpouses, setHideSpouses] = useState<boolean>(false);
-  const [hideFemales, setHideFemales] = useState<boolean>(false);
+  const [hideFemales, setHideFemalesState] = useState<boolean>(false);
+  const [hideMales, setHideMalesState] = useState<boolean>(false);
   const [view, setViewState] = useState<ViewMode>("tree");
   const [rootId, setRootIdState] = useState<string | null>(null);
   const [treeStats, setTreeStats] = useState<{ totalMembers: number; generations: number }>({ totalMembers: 0, generations: 0 });
+  const [treeScale, setTreeScale] = useState<number>(1);
 
   // Initialize non-rootId state once on mount
   useEffect(() => {
@@ -44,7 +50,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     setHideSpouses(spousesParam === "hide");
 
     const femalesParam = searchParams.get("females");
-    setHideFemales(femalesParam === "hide");
+    setHideFemalesState(femalesParam === "hide");
+
+    const malesParam = searchParams.get("males");
+    setHideMalesState(malesParam === "hide");
 
     const viewParam = searchParams.get("view") as ViewMode;
     if (viewParam) setViewState(viewParam);
@@ -109,13 +118,26 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateHideFemales = (hide: boolean) => {
-    setHideFemales(hide);
+    setHideFemalesState(hide);
     if (typeof window !== "undefined") {
       const newUrl = new URL(window.location.href);
       if (hide) {
         newUrl.searchParams.set("females", "hide");
       } else {
         newUrl.searchParams.delete("females");
+      }
+      window.history.replaceState(null, "", newUrl.toString());
+    }
+  };
+
+  const updateHideMales = (hide: boolean) => {
+    setHideMalesState(hide);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      if (hide) {
+        newUrl.searchParams.set("males", "hide");
+      } else {
+        newUrl.searchParams.delete("males");
       }
       window.history.replaceState(null, "", newUrl.toString());
     }
@@ -154,12 +176,16 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         setHideSpouses: updateHideSpouses,
         hideFemales,
         setHideFemales: updateHideFemales,
+        hideMales,
+        setHideMales: updateHideMales,
         view,
         setView,
         rootId,
         setRootId,
         treeStats,
         setTreeStats,
+        treeScale,
+        setTreeScale,
       }}
     >
       {children}
@@ -181,12 +207,16 @@ export function useDashboard(): DashboardState {
       setHideSpouses: () => { },
       hideFemales: false,
       setHideFemales: () => { },
+      hideMales: false,
+      setHideMales: () => { },
       view: "tree",
       setView: () => { },
       rootId: null,
       setRootId: () => { },
       treeStats: { totalMembers: 0, generations: 0 },
       setTreeStats: () => { },
+      treeScale: 1,
+      setTreeScale: () => { },
     };
   }
   return context;

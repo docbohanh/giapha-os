@@ -173,55 +173,55 @@ export default function FamilyStats({
     {
       label: "Tổng thành viên",
       value: stats.total,
-      icon: <Users className="size-5 text-stone-600" />,
+      icon: <Users className="size-5 text-white" />,
       color: "bg-stone-400",
     },
     {
       label: "Nam",
       value: stats.male,
-      icon: <Mars className="size-5 text-blue-600" />,
+      icon: <Mars className="size-5 text-white" />,
       color: "bg-blue-400",
     },
     {
       label: "Nữ",
       value: stats.female,
-      icon: <Venus className="size-5 text-pink-500" />,
+      icon: <Venus className="size-5 text-white" />,
       color: "bg-pink-400",
     },
     {
       label: "Con dâu",
       value: stats.daughtersInLaw,
-      icon: <Flower2 className="size-5 text-rose-500" />,
+      icon: <Flower2 className="size-5 text-white" />,
       color: "bg-rose-400",
     },
     {
       label: "Con rể",
       value: stats.sonsInLaw,
-      icon: <Users className="size-5 text-indigo-500" />,
+      icon: <Users className="size-5 text-white" />,
       color: "bg-indigo-400",
     },
     {
       label: "Đã kết hôn",
       value: stats.married,
-      icon: <Heart className="size-5 text-red-500" />,
+      icon: <Heart className="size-5 text-white" />,
       color: "bg-red-400",
     },
     {
       label: "Chưa kết hôn",
       value: stats.unmarried,
-      icon: <HeartOff className="size-5 text-stone-400" />,
+      icon: <HeartOff className="size-5 text-white" />,
       color: "bg-stone-300",
     },
     {
       label: "Đã mất",
       value: stats.deceased,
-      icon: <Skull className="size-5 text-stone-500" />,
+      icon: <Skull className="size-5 text-white" />,
       color: "bg-stone-400",
     },
     {
       label: "Con trưởng",
       value: stats.firstBorn,
-      icon: <Crown className="size-5 text-amber-500" />,
+      icon: <Crown className="size-5 text-white" />,
       color: "bg-amber-400",
     },
   ];
@@ -252,7 +252,7 @@ export default function FamilyStats({
           className="bg-white/80 border border-stone-200/60 rounded-2xl p-6 shadow-sm"
         >
           <h2 className="text-base font-bold text-stone-700 mb-5 flex items-center gap-2">
-            <Crown className="size-4 text-amber-500" />
+            <Crown className="size-4 text-white" />
             Phân bố theo thế hệ
           </h2>
           <div className="space-y-3">
@@ -280,7 +280,7 @@ export default function FamilyStats({
         className="bg-white/80 border border-stone-200/60 rounded-2xl p-6 shadow-sm"
       >
         <h2 className="text-base font-bold text-stone-700 mb-5 flex items-center gap-2">
-          <Users className="size-4 text-stone-500" />
+          <Users className="size-4 text-white" />
           Tỉ lệ giới tính
         </h2>
         <div className="flex h-5 rounded-full overflow-hidden gap-px">

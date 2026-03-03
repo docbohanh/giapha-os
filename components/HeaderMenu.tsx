@@ -112,20 +112,20 @@ export default function HeaderMenu({ isAdmin, userEmail, displayName, avatarUrl,
                 Sự kiện
               </Link>
               <Link
-                href="/dashboard/kinship"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
-              >
-                <GitMerge className="w-4 h-4" />
-                Tra cứu danh xưng
-              </Link>
-              <Link
                 href="/dashboard/stats"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
               >
                 <BarChart2 className="w-4 h-4" />
                 Thống kê
+              </Link>
+              <Link
+                href="/dashboard/kinship"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
+              >
+                <GitMerge className="w-4 h-4" />
+                Tra cứu danh xưng
               </Link>
               <hr className="border-stone-100 my-1" />
               {isAdmin && (
