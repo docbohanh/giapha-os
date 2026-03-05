@@ -1,9 +1,5 @@
 "use client";
 
-"use client";
-
-"use client";
-
 import { CustomEventRecord } from "@/utils/eventHelpers";
 import { createClient } from "@/utils/supabase/client";
 import { useState, useEffect } from "react";

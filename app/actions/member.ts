@@ -265,6 +265,89 @@ export async function rejectEditRequest(requestId: string, adminNote?: string) {
   revalidatePath("/dashboard/admin/requests");
   revalidatePath("/dashboard/requests");
 }
+export async function updateBirthDate(
+  memberId: string,
+  birthDay: number | null,
+  birthMonth: number | null,
+  birthYear: number | null,
+) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin" && profile?.role !== "editor") {
+    throw new Error("Từ chối truy cập. Chỉ admin hoặc editor mới có quyền thực hiện thao tác này.");
+  }
+
+  const { error } = await supabase
+    .from("persons")
+    .update({
+      birth_day: birthDay,
+      birth_month: birthMonth,
+      birth_year: birthYear,
+    })
+    .eq("id", memberId);
+
+  if (error) throw new Error("Lỗi khi cập nhật ngày sinh: " + error.message);
+
+  revalidatePath(`/dashboard/members/${memberId}`);
+  revalidatePath("/dashboard");
+}
+
+export async function updateDeathDate(
+
+  memberId: string,
+  deathDay: number | null,
+  deathMonth: number | null,
+  deathYear: number | null,
+  isDeceased: boolean = false,
+) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin" && profile?.role !== "editor") {
+    throw new Error("Từ chối truy cập. Chỉ admin hoặc editor mới có quyền thực hiện thao tác này.");
+  }
+
+  const { error } = await supabase
+    .from("persons")
+    .update({
+      is_deceased: isDeceased,
+      death_day: deathDay,
+      death_month: deathMonth,
+      death_year: deathYear,
+    })
+    .eq("id", memberId);
+
+  if (error) throw new Error("Lỗi khi cập nhật ngày mất: " + error.message);
+
+  revalidatePath(`/dashboard/members/${memberId}`);
+  revalidatePath("/dashboard");
+}
+
 export async function deleteEditRequest(requestId: string) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);

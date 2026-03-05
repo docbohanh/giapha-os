@@ -25,25 +25,36 @@ interface RelEdge {
     type: "marriage" | "biological_child" | "adopted_child" | string;
     person_a: string;
     person_b: string;
+    sort_order?: number | null;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
 /**
  * So sánh thứ bậc giữa hai người (cùng bố mẹ hoặc cùng thế hệ)
- * Ưu tiên: Thứ tự sinh (birth_order) -> Năm sinh (birth_year)
+ * Ưu tiên: sort_order (từ relationship) -> birth_order (từ person) -> birth_year (từ person)
  */
 function compareSeniority(
     a: PersonNode,
     b: PersonNode,
+    sortA?: number | null,
+    sortB?: number | null,
 ): "senior" | "junior" | "equal" {
     if (a.id === b.id) return "equal";
 
+    // 1. Ưu tiên sort_order của relationship (nếu là anh em ruột)
+    if (sortA != null && sortB != null) {
+        if (sortA < sortB) return "senior";
+        if (sortA > sortB) return "junior";
+    }
+
+    // 2. Tiếp theo là birth_order của chính person
     if (a.birth_order != null && b.birth_order != null) {
         if (a.birth_order < b.birth_order) return "senior";
         if (a.birth_order > b.birth_order) return "junior";
     }
 
+    // 3. Cuối cùng là birth_year
     if (a.birth_year != null && b.birth_year != null) {
         if (a.birth_year < b.birth_year) return "senior";
         if (a.birth_year > b.birth_year) return "junior";
@@ -117,8 +128,8 @@ function resolveBloodTerms(
     depthB: number,
     personA: PersonNode,
     personB: PersonNode,
-    pathA: PersonNode[], // Từ A lên tới LCA (không bao gồm LCA)
-    pathB: PersonNode[], // Từ B lên tới LCA (không bao gồm LCA)
+    pathA: { node: PersonNode; sortOrder?: number | null }[], // Từ A lên tới LCA (không bao gồm LCA)
+    pathB: { node: PersonNode; sortOrder?: number | null }[], // Từ B lên tới LCA (không bao gồm LCA)
 ): [string, string, string] {
     const genderA = personA.gender;
     const genderB = personB.gender;
@@ -127,10 +138,10 @@ function resolveBloodTerms(
     if (depthA === 0) {
         // A chính là LCA. B là con cháu của A.
         // Xác định vế Nội/Ngoại của B đối với A: Dựa vào người con đầu tiên của A trên đường tới B
-        const firstChildOfA = pathB[pathB.length - 1];
-        if (!firstChildOfA) return ["Hậu duệ", "Tiền bối", "Quan hệ Trực hệ"];
+        const firstChildDataOfA = pathB[pathB.length - 1];
+        if (!firstChildDataOfA) return ["Hậu duệ", "Tiền bối", "Quan hệ Trực hệ"];
 
-        const isPaternal = firstChildOfA.gender === "male";
+        const isPaternal = firstChildDataOfA.node.gender === "male";
 
         const bCallsA = getDirectAncestorTerm(depthB, genderA, isPaternal);
         const aCallsB = getDirectDescendantTerm(depthB);
@@ -139,10 +150,10 @@ function resolveBloodTerms(
 
     if (depthB === 0) {
         // B chính là LCA. A là con cháu của B.
-        const firstChildOfB = pathA[pathA.length - 1];
-        if (!firstChildOfB) return ["Tiền bối", "Hậu duệ", "Quan hệ Trực hệ"];
+        const firstChildDataOfB = pathA[pathA.length - 1];
+        if (!firstChildDataOfB) return ["Tiền bối", "Hậu duệ", "Quan hệ Trực hệ"];
 
-        const isPaternal = firstChildOfB.gender === "male";
+        const isPaternal = firstChildDataOfB.node.gender === "male";
 
         const aCallsB = getDirectAncestorTerm(depthA, genderB, isPaternal);
         const bCallsA = getDirectDescendantTerm(depthA);
@@ -150,20 +161,19 @@ function resolveBloodTerms(
     }
 
     // 2. QUAN HỆ NGANG HÀNG (Anh chị em ruột hoặc họ hàng)
-    const branchA = pathA[pathA.length - 1]; // Con của LCA phía A
-    const branchB = pathB[pathB.length - 1]; // Con của LCA phía B
+    const branchA = pathA[pathA.length - 1]; // Con của LCA phía A (kèm sortOrder)
+    const branchB = pathB[pathB.length - 1]; // Con của LCA phía B (kèm sortOrder)
 
     if (!branchA || !branchB) return ["Họ hàng", "Họ hàng", "Quan hệ họ hàng"];
 
-    const seniority = compareSeniority(branchA, branchB);
+    const seniority = compareSeniority(branchA.node, branchB.node, branchA.sortOrder, branchB.sortOrder);
 
     // Xác định vế Nội/Ngoại: Dựa vào giới tính của người ở nhánh A (người đang gọi)
-    const isPaternalA = branchA.gender === "male";
+    const isPaternalA = branchA.node.gender === "male";
 
     // Anh chị em ruột (Cùng bố mẹ)
     if (depthA === 1 && depthB === 1) {
-        const aSenior = compareSeniority(personA, personB);
-        if (aSenior === "senior") {
+        if (seniority === "senior") {
             return [
                 genderB === "female" ? "Em gái" : "Em trai",
                 genderA === "female" ? "Chị gái" : "Anh trai",
@@ -182,7 +192,7 @@ function resolveBloodTerms(
     if (depthA > 1 && depthB === 1) {
         // B là anh/chị/em của tổ tiên A
         let termForB = "";
-        const isPaternalSide = branchA.gender === "male";
+        const isPaternalSide = branchA.node.gender === "male";
 
         if (isPaternalSide) {
             // Bên Nội (Anh em của bố)
@@ -252,7 +262,7 @@ function resolveBloodTerms(
                 // B ở vế trên
                 let termForB = "Họ hàng";
                 if (genDiff === 1) {
-                    const isPaternalSide = branchA.gender === "male";
+                    const isPaternalSide = branchA.node.gender === "male";
                     if (isPaternalSide) {
                         termForB =
                             genderB === "female"
@@ -288,11 +298,11 @@ function resolveBloodTerms(
 
 function getAncestryData(
     id: string,
-    parentMap: Map<string, string[]>,
+    parentMap: Map<string, { id: string; sortOrder?: number | null }[]>,
     personsMap: Map<string, PersonNode>,
 ) {
-    const depths = new Map<string, { depth: number; path: PersonNode[] }>();
-    const queue: { id: string; depth: number; path: PersonNode[] }[] = [
+    const depths = new Map<string, { depth: number; path: { node: PersonNode; sortOrder?: number | null }[] }>();
+    const queue: { id: string; depth: number; path: { node: PersonNode; sortOrder?: number | null }[] }[] = [
         { id, depth: 0, path: [] },
     ];
 
@@ -305,14 +315,14 @@ function getAncestryData(
             if (!currentNode) continue;
 
             const parents = parentMap.get(currentId) ?? [];
-            for (const pId of parents) {
-                const pNode = personsMap.get(pId);
+            for (const pInfo of parents) {
+                const pNode = personsMap.get(pInfo.id);
                 if (pNode) {
-                    // Lưu con đường: từ người gốc lên, path chứa các nút trung gian
+                    // Lưu con đường: từ người gốc lên, path chứa các nút trung gian kèm sort order của chính nút đó tới cha
                     queue.push({
-                        id: pId,
+                        id: pInfo.id,
                         depth: depth + 1,
-                        path: [...path, currentNode],
+                        path: [...path, { node: currentNode, sortOrder: pInfo.sortOrder }],
                     });
                 }
             }
@@ -325,7 +335,7 @@ function findBloodKinship(
     personA: PersonNode,
     personB: PersonNode,
     personsMap: Map<string, PersonNode>,
-    parentMap: Map<string, string[]>,
+    parentMap: Map<string, { id: string; sortOrder?: number | null }[]>,
 ): KinshipResult | null {
     const ancA = getAncestryData(personA.id, parentMap, personsMap);
     const ancB = getAncestryData(personB.id, parentMap, personsMap);
@@ -382,13 +392,13 @@ export function computeKinship(
     if (personA.id === personB.id) return null;
 
     const personsMap = new Map(persons.map((p) => [p.id, p]));
-    const parentMap = new Map<string, string[]>();
+    const parentMap = new Map<string, { id: string; sortOrder?: number | null }[]>();
     const spouseMap = new Map<string, string[]>();
 
     for (const r of relationships) {
         if (r.type === "biological_child" || r.type === "adopted_child") {
             const p = parentMap.get(r.person_b) ?? [];
-            p.push(r.person_a);
+            p.push({ id: r.person_a, sortOrder: r.sort_order });
             parentMap.set(r.person_b, p);
         } else if (r.type === "marriage") {
             const sA = spouseMap.get(r.person_a) ?? [];

@@ -115,20 +115,22 @@ export default function LandingHero({ siteName, persons, relationships, isLogged
         className="space-y-6 sm:space-y-8 flex flex-col items-center"
         variants={fadeIn}
       >
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          className="relative overflow-hidden rounded-2xl group w-full max-w-2xl"
-        >
-          <Image
-            src="/lahuutoc_ok.png"
-            alt="La Hữu Tộc"
-            width={640}
-            height={320}
-            className="object-contain w-full h-auto"
-            priority
-          />
-          <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-        </motion.div>
+        <Link href="/dashboard" className="block w-full max-w-2xl">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="relative overflow-hidden rounded-2xl group w-full"
+          >
+            <Image
+              src="/lahuutoc_ok.png"
+              alt="La Hữu Tộc"
+              width={640}
+              height={320}
+              className="object-contain w-full h-auto"
+              priority
+            />
+            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+          </motion.div>
+        </Link>
 
         <FamilyHistoryExcerpt />
       </motion.div>

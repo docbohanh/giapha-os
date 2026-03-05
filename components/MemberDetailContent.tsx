@@ -12,10 +12,12 @@ import {
   setDefaultRootNode,
   setUserRootNode,
   updateMemberNote,
+  updateDeathDate,
+  updateBirthDate,
 } from "@/app/actions/member";
 import CommentSection from "@/components/CommentSection";
 import SubmitEditRequestModal from "@/components/SubmitEditRequestModal";
-import { motion, Variants } from "framer-motion";
+import { AnimatePresence, motion, Variants } from "framer-motion";
 import {
   Briefcase,
   Check,
@@ -27,6 +29,7 @@ import {
   MapPin,
   Pencil,
   Phone,
+  Skull,
   Users,
   X,
 } from "lucide-react";
@@ -42,6 +45,7 @@ interface MemberDetailContentProps {
   isUser?: boolean;
   userSavedRootId?: string | null;
   onLinkClick?: () => void;
+  onSave?: () => void;
 }
 
 export default function MemberDetailContent({
@@ -51,16 +55,86 @@ export default function MemberDetailContent({
   isUser = false,
   userSavedRootId = null,
   onLinkClick,
+  onSave,
 }: MemberDetailContentProps) {
   const fullPerson = { ...person, ...privateData };
-  const isDeceased =
-    !!person.death_year || !!person.death_month || !!person.death_day;
+  const isDeceased = person.is_deceased;
   const pathname = usePathname();
   const router = useRouter();
   const isModalView = pathname !== `/dashboard/members/${person.id}`;
   const [isPending, startTransition] = useTransition();
   const isCurrentRoot = !!person.is_default_root_node;
   const [editModalOpen, setEditModalOpen] = useState(false);
+
+  // Death date quick edit
+  const [deathEditOpen, setDeathEditOpen] = useState(false);
+  const [isDeceasedToggle, setIsDeceasedToggle] = useState(person.is_deceased);
+  const [deathDay, setDeathDay] = useState<string>(person.death_day?.toString() ?? "");
+  const [deathMonth, setDeathMonth] = useState<string>(person.death_month?.toString() ?? "");
+  const [deathYear, setDeathYear] = useState<string>(person.death_year?.toString() ?? "");
+  const [deathSaving, setDeathSaving] = useState(false);
+  const [deathError, setDeathError] = useState<string | null>(null);
+
+  const openDeathEdit = () => {
+    setIsDeceasedToggle(person.is_deceased);
+    setDeathDay(person.death_day?.toString() ?? "");
+    setDeathMonth(person.death_month?.toString() ?? "");
+    setDeathYear(person.death_year?.toString() ?? "");
+    setDeathError(null);
+    setDeathEditOpen(true);
+  };
+
+  const saveDeathDate = async () => {
+    setDeathSaving(true);
+    setDeathError(null);
+    try {
+      const day = isDeceasedToggle && deathDay ? parseInt(deathDay) : null;
+      const month = isDeceasedToggle && deathMonth ? parseInt(deathMonth) : null;
+      const year = isDeceasedToggle && deathYear ? parseInt(deathYear) : null;
+      await updateDeathDate(person.id, day, month, year, isDeceasedToggle);
+      setDeathEditOpen(false);
+      onSave?.();
+      router.refresh();
+    } catch (err: unknown) {
+      setDeathError(err instanceof Error ? err.message : "Đã xảy ra lỗi.");
+    } finally {
+      setDeathSaving(false);
+    }
+  };
+
+  // Birth date quick edit
+  const [birthEditOpen, setBirthEditOpen] = useState(false);
+  const [birthDay, setBirthDay] = useState<string>(person.birth_day?.toString() ?? "");
+  const [birthMonth, setBirthMonth] = useState<string>(person.birth_month?.toString() ?? "");
+  const [birthYear, setBirthYear] = useState<string>(person.birth_year?.toString() ?? "");
+  const [birthSaving, setBirthSaving] = useState(false);
+  const [birthError, setBirthError] = useState<string | null>(null);
+
+  const openBirthEdit = () => {
+    setBirthDay(person.birth_day?.toString() ?? "");
+    setBirthMonth(person.birth_month?.toString() ?? "");
+    setBirthYear(person.birth_year?.toString() ?? "");
+    setBirthError(null);
+    setBirthEditOpen(true);
+  };
+
+  const saveBirthDate = async () => {
+    setBirthSaving(true);
+    setBirthError(null);
+    try {
+      const day = birthDay ? parseInt(birthDay) : null;
+      const month = birthMonth ? parseInt(birthMonth) : null;
+      const year = birthYear ? parseInt(birthYear) : null;
+      await updateBirthDate(person.id, day, month, year);
+      setBirthEditOpen(false);
+      onSave?.();
+      router.refresh();
+    } catch (err: unknown) {
+      setBirthError(err instanceof Error ? err.message : "Đã xảy ra lỗi.");
+    } finally {
+      setBirthSaving(false);
+    }
+  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -129,8 +203,10 @@ export default function MemberDetailContent({
               <h1 className="text-2xl sm:text-3xl font-sans font-bold text-stone-900 flex items-center gap-2 sm:gap-3 flex-wrap">
                 {fullPerson.full_name}
                 {isDeceased && (
-                  <span className="text-[10px] sm:text-xs font-sans font-bold text-stone-500 border border-stone-200/80 bg-stone-100/50 rounded-md px-2 py-0.5 whitespace-nowrap uppercase tracking-wider shadow-xs">
-                    Đã mất
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="text-[10px] sm:text-xs font-sans font-bold text-stone-500 border border-stone-200/80 bg-stone-100/50 rounded-md px-2 py-0.5 whitespace-nowrap uppercase tracking-wider shadow-xs">
+                      Đã mất
+                    </span>
                   </span>
                 )}
                 {person.is_in_law && (
@@ -217,13 +293,22 @@ export default function MemberDetailContent({
                 {/* Birth Card */}
                 <motion.div
                   variants={itemVariants}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-stone-200/60 shadow-sm transition-all hover:shadow-md hover:border-amber-200/60"
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-3 border border-stone-200/60 shadow-sm transition-all hover:shadow-md hover:border-amber-200/60"
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
                     <h3 className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">
                       Sinh
                     </h3>
+                    {isAdmin && isModalView && (
+                      <button
+                        onClick={openBirthEdit}
+                        title="Sửa nhanh ngày sinh"
+                        className="w-5 h-5 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 border border-stone-200/80 text-stone-500 hover:text-stone-700 transition-colors cursor-pointer shadow-xs"
+                      >
+                        <Pencil className="w-2.5 h-2.5" />
+                      </button>
+                    )}
                   </div>
                   <div className="space-y-1.5 pl-4 border-l-2 border-stone-100">
                     <p className="text-stone-800 font-semibold text-sm sm:text-base">
@@ -251,16 +336,36 @@ export default function MemberDetailContent({
                 </motion.div>
 
                 {/* Death Card */}
+                {!isDeceased && isAdmin && (
+                  <button
+                    onClick={openDeathEdit}
+                    title="Đánh dấu đã mất"
+                    className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-sans font-semibold text-stone-400 border border-dashed border-stone-300 bg-transparent hover:bg-stone-100 hover:text-stone-600 rounded-xl px-2 py-1 transition-colors cursor-pointer"
+                  >
+                    <Skull className="w-3 h-3" />
+                    Đã mất
+                  </button>
+                )}
                 {isDeceased && (
                   <motion.div
                     variants={itemVariants}
-                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-stone-200/60 shadow-sm transition-all hover:shadow-md hover:border-amber-200/60"
+                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-3 border border-stone-200/60 shadow-sm transition-all hover:shadow-md hover:border-amber-200/60"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <span className="w-2 h-2 rounded-full bg-stone-400 shadow-[0_0_8px_rgba(156,163,175,0.5)]"></span>
                       <h3 className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">
                         Mất
                       </h3>
+
+                      {isAdmin && isModalView && (
+                        <button
+                          onClick={openDeathEdit}
+                          title="Sửa nhanh ngày mất"
+                          className="w-5 h-5 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 border border-stone-200/80 text-stone-500 hover:text-stone-700 transition-colors cursor-pointer shadow-xs"
+                        >
+                          <Pencil className="w-2.5 h-2.5" />
+                        </button>
+                      )}
                     </div>
                     <div className="space-y-1.5 pl-4 border-l-2 border-stone-100">
                       <p className="text-stone-800 font-semibold text-sm sm:text-base">
@@ -449,6 +554,224 @@ export default function MemberDetailContent({
         persons={[{ id: person.id, full_name: person.full_name }]}
         preselectedPersonId={person.id}
       />
+
+      {/* Birth Date Quick Edit Popup */}
+      {birthEditOpen && isModalView && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-stone-200 p-6">
+            <button
+              onClick={() => setBirthEditOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-5">
+              <span className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200">
+                <Leaf className="w-4 h-4 text-emerald-600" />
+              </span>
+              <div>
+                <h3 className="font-bold text-stone-900 text-base">Sửa nhanh ngày sinh</h3>
+                <p className="text-xs text-stone-500">{person.full_name}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-1.5">
+                  Ngày sinh dương lịch (để trống nếu không rõ)
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    placeholder="Ngày"
+                    value={birthDay}
+                    onChange={(e) => setBirthDay(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-900 font-semibold text-sm text-center focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent shadow-xs"
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    placeholder="Tháng"
+                    value={birthMonth}
+                    onChange={(e) => setBirthMonth(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-900 font-semibold text-sm text-center focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent shadow-xs"
+                  />
+                  <input
+                    type="number"
+                    min={1900}
+                    max={2100}
+                    placeholder="Năm"
+                    value={birthYear}
+                    onChange={(e) => setBirthYear(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-900 font-semibold text-sm text-center focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent shadow-xs"
+                  />
+                </div>
+              </div>
+
+              {birthError && (
+                <p className="text-sm text-red-600 font-medium bg-red-50 rounded-xl px-3 py-2 border border-red-100">
+                  {birthError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setBirthEditOpen(false)}
+                disabled={birthSaving}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-stone-200 text-stone-700 font-semibold text-sm hover:bg-stone-50 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={saveBirthDate}
+                disabled={birthSaving}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {birthSaving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Đang lưu...</>
+                ) : (
+                  <><Check className="w-4 h-4" /> Lưu</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Death Date Quick Edit Popup */}
+      {deathEditOpen && isModalView && (
+
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-stone-200 p-6">
+            <button
+              onClick={() => setDeathEditOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-5">
+              <span className="w-8 h-8 flex items-center justify-center rounded-xl bg-stone-100 border border-stone-200">
+                <Skull className="w-4 h-4 text-stone-600" />
+              </span>
+              <div>
+                <h3 className="font-bold text-stone-900 text-base">Sửa nhanh ngày mất</h3>
+                <p className="text-xs text-stone-500">{person.full_name}</p>
+              </div>
+            </div>
+
+            <div className="bg-stone-50/50 p-4 rounded-2xl border border-stone-200/60 shadow-xs space-y-0">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={isDeceasedToggle}
+                    onChange={(e) => {
+                      setIsDeceasedToggle(e.target.checked);
+                      if (!e.target.checked) {
+                        setDeathDay("");
+                        setDeathMonth("");
+                        setDeathYear("");
+                      }
+                    }}
+                    className="peer sr-only"
+                  />
+                  <div className="w-5 h-5 border-2 border-stone-300 rounded peer-checked:bg-stone-600 peer-checked:border-stone-600 transition-colors flex items-center justify-center">
+                    <motion.svg
+                      initial={false}
+                      animate={{
+                        opacity: isDeceasedToggle ? 1 : 0,
+                        scale: isDeceasedToggle ? 1 : 0.5,
+                      }}
+                      className="w-3 h-3 text-white pointer-events-none"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={4}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </motion.svg>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-stone-700 group-hover:text-stone-900 transition-colors">
+                  Đã qua đời
+                </span>
+              </label>
+
+              <AnimatePresence>
+                {isDeceasedToggle && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <label className="block text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-1.5">
+                      Ngày mất (để trống nếu không rõ)
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <input
+                        type="number"
+                        min={1}
+                        max={31}
+                        placeholder="Ngày"
+                        value={deathDay}
+                        onChange={(e) => setDeathDay(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 bg-white text-stone-900 font-semibold text-sm text-center focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent shadow-xs"
+                      />
+                      <input
+                        type="number"
+                        min={1}
+                        max={12}
+                        placeholder="Tháng"
+                        value={deathMonth}
+                        onChange={(e) => setDeathMonth(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 bg-white text-stone-900 font-semibold text-sm text-center focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent shadow-xs"
+                      />
+                      <input
+                        type="number"
+                        min={1900}
+                        max={2100}
+                        placeholder="Năm"
+                        value={deathYear}
+                        onChange={(e) => setDeathYear(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 bg-white text-stone-900 font-semibold text-sm text-center focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-transparent shadow-xs"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setDeathEditOpen(false)}
+                disabled={deathSaving}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-stone-200 text-stone-700 font-semibold text-sm hover:bg-stone-50 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={saveDeathDate}
+                disabled={deathSaving}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-stone-800 hover:bg-stone-900 text-white font-semibold text-sm transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deathSaving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Đang lưu...</>
+                ) : (
+                  <><Check className="w-4 h-4" /> Lưu</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

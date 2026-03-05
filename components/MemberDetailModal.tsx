@@ -197,6 +197,7 @@ export default function MemberDetailModal() {
                   isUser={isUser}
                   userSavedRootId={userSavedRootId}
                   onLinkClick={closeModal}
+                  onSave={() => memberId && fetchData(memberId)}
                 />
               </div>
             ) : null}

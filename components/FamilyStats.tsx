@@ -280,7 +280,7 @@ export default function FamilyStats({
         className="bg-white/80 border border-stone-200/60 rounded-2xl p-6 shadow-sm"
       >
         <h2 className="text-base font-bold text-stone-700 mb-5 flex items-center gap-2">
-          <Users className="size-4 text-white" />
+          <Users className="size-4 text-stone-500" />
           Tỉ lệ giới tính
         </h2>
         <div className="flex h-5 rounded-full overflow-hidden gap-px">
