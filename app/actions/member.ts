@@ -5,6 +5,54 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+export async function applyLineageUpdates(
+  updates: Array<{
+    id: string;
+    new_generation: number | null;
+    new_birth_order: number | null;
+  }>,
+) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin" && profile?.role !== "editor") {
+    throw new Error("Chỉ admin hoặc editor mới có quyền thực hiện thao tác này.");
+  }
+
+  // Update each person individually (server-side, bypasses RLS)
+  const CHUNK = 20;
+  for (let i = 0; i < updates.length; i += CHUNK) {
+    const chunk = updates.slice(i, i + CHUNK);
+    const results = await Promise.all(
+      chunk.map((u) =>
+        supabase
+          .from("persons")
+          .update({
+            generation: u.new_generation,
+            birth_order: u.new_birth_order,
+          })
+          .eq("id", u.id),
+      ),
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error("Lỗi cập nhật: " + failed.error.message);
+  }
+
+  revalidatePath("/dashboard/stats");
+  revalidatePath("/dashboard");
+}
+
 export async function deleteMemberProfile(memberId: string) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);

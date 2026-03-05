@@ -252,7 +252,7 @@ export default function FamilyStats({
           className="bg-white/80 border border-stone-200/60 rounded-2xl p-6 shadow-sm"
         >
           <h2 className="text-base font-bold text-stone-700 mb-5 flex items-center gap-2">
-            <Crown className="size-4 text-white" />
+            <Crown className="size-4 text-amber-500" />
             Phân bố theo thế hệ
           </h2>
           <div className="space-y-3">
