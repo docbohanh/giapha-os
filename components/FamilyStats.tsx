@@ -1,6 +1,7 @@
 "use client";
 
 import { Person, Relationship } from "@/types";
+import { getZodiacAnimal, getZodiacSign } from "@/utils/dateHelpers";
 import { motion } from "framer-motion";
 import {
   Crown,
@@ -8,7 +9,9 @@ import {
   Heart,
   HeartOff,
   Mars,
+  Moon,
   Skull,
+  Star,
   Users,
   Venus,
 } from "lucide-react";
@@ -146,14 +149,46 @@ export default function FamilyStats({
 
     // Generation breakdown
     const genMap = new Map<number, number>();
+    const zodiacMap = new Map<string, number>();
+    const chineseZodiacMap = new Map<string, number>();
+
     persons.forEach((p) => {
+      // Generations
       if (p.generation != null) {
         genMap.set(p.generation, (genMap.get(p.generation) ?? 0) + 1);
       }
+
+      // Zodiac Signs
+      const zodiac = getZodiacSign(p.birth_day, p.birth_month);
+      if (zodiac) {
+        zodiacMap.set(zodiac, (zodiacMap.get(zodiac) ?? 0) + 1);
+      }
+
+      // Chinese Zodiac
+      const chineseZodiac = getZodiacAnimal(
+        p.birth_year,
+        p.birth_month,
+        p.birth_day,
+      );
+      if (chineseZodiac) {
+        chineseZodiacMap.set(
+          chineseZodiac,
+          (chineseZodiacMap.get(chineseZodiac) ?? 0) + 1,
+        );
+      }
     });
+
     const generationBreakdown = Array.from(genMap.entries())
       .sort(([a], [b]) => a - b)
       .map(([gen, count]) => ({ gen, count }));
+
+    const zodiacBreakdown = Array.from(zodiacMap.entries())
+      .sort((a, b) => b[1] - a[1]) // Sort by count descending
+      .map(([name, count]) => ({ name, count }));
+
+    const chineseZodiacBreakdown = Array.from(chineseZodiacMap.entries())
+      .sort((a, b) => b[1] - a[1]) // Sort by count descending
+      .map(([name, count]) => ({ name, count }));
 
     return {
       total,
@@ -166,6 +201,8 @@ export default function FamilyStats({
       married,
       unmarried,
       generationBreakdown,
+      zodiacBreakdown,
+      chineseZodiacBreakdown,
     };
   }, [persons, relationships]);
 
@@ -173,55 +210,55 @@ export default function FamilyStats({
     {
       label: "Tổng thành viên",
       value: stats.total,
-      icon: <Users className="size-5 text-white" />,
+      icon: <Users className="size-5 text-stone-600" />,
       color: "bg-stone-400",
     },
     {
       label: "Nam",
       value: stats.male,
-      icon: <Mars className="size-5 text-white" />,
+      icon: <Mars className="size-5 text-blue-600" />,
       color: "bg-blue-400",
     },
     {
       label: "Nữ",
       value: stats.female,
-      icon: <Venus className="size-5 text-white" />,
+      icon: <Venus className="size-5 text-pink-500" />,
       color: "bg-pink-400",
     },
     {
       label: "Con dâu",
       value: stats.daughtersInLaw,
-      icon: <Flower2 className="size-5 text-white" />,
+      icon: <Flower2 className="size-5 text-rose-500" />,
       color: "bg-rose-400",
     },
     {
       label: "Con rể",
       value: stats.sonsInLaw,
-      icon: <Users className="size-5 text-white" />,
+      icon: <Users className="size-5 text-indigo-500" />,
       color: "bg-indigo-400",
     },
     {
       label: "Đã kết hôn",
       value: stats.married,
-      icon: <Heart className="size-5 text-white" />,
+      icon: <Heart className="size-5 text-red-500" />,
       color: "bg-red-400",
     },
     {
       label: "Chưa kết hôn",
       value: stats.unmarried,
-      icon: <HeartOff className="size-5 text-white" />,
+      icon: <HeartOff className="size-5 text-stone-400" />,
       color: "bg-stone-300",
     },
     {
       label: "Đã mất",
       value: stats.deceased,
-      icon: <Skull className="size-5 text-white" />,
+      icon: <Skull className="size-5 text-stone-500" />,
       color: "bg-stone-400",
     },
     {
       label: "Con trưởng",
       value: stats.firstBorn,
-      icon: <Crown className="size-5 text-white" />,
+      icon: <Crown className="size-5 text-amber-500" />,
       color: "bg-amber-400",
     },
   ];
@@ -320,6 +357,99 @@ export default function FamilyStats({
           </span>
         </div>
       </motion.div>
+
+      {/* Grid for Zodiacs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Zodiac Breakdown */}
+        {stats.zodiacBreakdown.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.8 }}
+            className="bg-white/80 border border-stone-200/60 rounded-2xl p-6 shadow-sm"
+          >
+            <h2 className="text-base font-bold text-stone-700 mb-5 flex items-center gap-2">
+              <Star className="size-4 text-purple-500" />
+              Cung hoàng đạo
+            </h2>
+            <div className="space-y-3">
+              {stats.zodiacBreakdown.map(({ name, count }, i) => {
+                const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
+                return (
+                  <div key={name} className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-stone-500 w-24 shrink-0">
+                      {name}
+                    </span>
+                    <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{
+                          duration: 0.6,
+                          delay: 0.85 + i * 0.07,
+                          ease: "easeOut",
+                        }}
+                        className="h-full bg-purple-400 rounded-full"
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-stone-700 w-8 text-right shrink-0">
+                      {count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-stone-400 mt-4 italic">
+              * Dự toán dựa trên ngày/tháng sinh dương lịch
+            </p>
+          </motion.div>
+        )}
+
+        {/* Chinese Zodiac Breakdown */}
+        {stats.chineseZodiacBreakdown.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.95 }}
+            className="bg-white/80 border border-stone-200/60 rounded-2xl p-6 shadow-sm"
+          >
+            <h2 className="text-base font-bold text-stone-700 mb-5 flex items-center gap-2">
+              <Moon className="size-4 text-orange-500" />
+              Con giáp
+            </h2>
+            <div className="space-y-3">
+              {stats.chineseZodiacBreakdown.map(({ name, count }, i) => {
+                const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
+                return (
+                  <div key={name} className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-stone-500 w-24 shrink-0">
+                      {name}
+                    </span>
+                    <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{
+                          duration: 0.6,
+                          delay: 1 + i * 0.07,
+                          ease: "easeOut",
+                        }}
+                        className="h-full bg-orange-400 rounded-full"
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-stone-700 w-8 text-right shrink-0">
+                      {count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-stone-400 mt-4 italic">
+              * Dự toán dựa trên năm sinh âm lịch
+            </p>
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 }

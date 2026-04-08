@@ -1,37 +1,23 @@
 import DeleteMemberButton from "@/components/DeleteMemberButton";
 import MemberDetailContent from "@/components/MemberDetailContent";
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
+import { getProfile, getSupabase } from "@/utils/supabase/queries";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function MemberDetailPage({ params }: PageProps) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
   const { id } = await params;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  // Check role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, is_active")
-    .eq("id", user.id)
-    .single();
+  const profile = await getProfile();
 
   const isAdmin = profile?.role === "admin";
-  const canEdit = isAdmin || profile?.role === "editor";
-  const isUser = !!profile?.is_active;
+  const canEdit = profile?.role === "admin" || profile?.role === "editor";
+
+  const supabase = await getSupabase();
 
   // Fetch Person Public Data
   const { data: person, error } = await supabase
@@ -44,9 +30,9 @@ export default async function MemberDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Fetch Private Data if canEdit (admin or editor)
+  // Fetch Private Data if Admin
   let privateData = null;
-  if (canEdit) {
+  if (isAdmin) {
     const { data } = await supabase
       .from("person_details_private")
       .select("*")
@@ -55,14 +41,6 @@ export default async function MemberDetailPage({ params }: PageProps) {
     privateData = data;
   }
 
-  // Fetch Personal Root ID
-  const { data: userRootData } = await supabase
-    .from("user_root_node")
-    .select("root_node_id")
-    .eq("user_id", user.id)
-    .single();
-  const userSavedRootId = userRootData?.root_node_id || null;
-
   return (
     <div className="flex-1 w-full relative flex flex-col pb-8">
       {/* Decorative background blurs */}
@@ -70,15 +48,16 @@ export default async function MemberDetailPage({ params }: PageProps) {
       {/* <div className="absolute top-[40%] right-0 w-[400px] h-[400px] bg-stone-300/20 rounded-full blur-[100px] pointer-events-none" /> */}
 
       <div className="w-full relative z-20 py-4 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto flex items-center justify-between">
-        <Link
-          href="/dashboard"
-          className="group flex items-center text-stone-500 hover:text-amber-700 font-medium text-sm transition-colors"
-        >
-          <span className="mr-1 group-hover:-translate-x-1 transition-transform">
-            ←
-          </span>
-          Quay lại
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/members"
+            className="p-2 -ml-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+            title="Quay lại danh sách"
+          >
+            <ArrowLeft className="size-5" />
+          </Link>
+          <h1 className="title">Chi Tiết Thành Viên</h1>
+        </div>
         {canEdit && (
           <div className="flex items-center gap-2.5">
             <Link
@@ -87,19 +66,18 @@ export default async function MemberDetailPage({ params }: PageProps) {
             >
               Chỉnh sửa
             </Link>
-            {isAdmin && <DeleteMemberButton memberId={id} />}
+            <DeleteMemberButton memberId={id} />
           </div>
         )}
       </div>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-10 w-full flex-1">
-        <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden hover:shadow-md transition-shadow duration-300">
+        <div className="bg-white/60 rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden hover:shadow-md transition-shadow duration-300">
           <MemberDetailContent
             person={person}
             privateData={privateData}
-            isAdmin={canEdit}
-            isUser={isUser}
-            userSavedRootId={userSavedRootId}
+            isAdmin={isAdmin}
+            canEdit={canEdit}
           />
         </div>
       </main>

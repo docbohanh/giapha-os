@@ -1,14 +1,9 @@
 "use client";
 
 import { motion, Variants } from "framer-motion";
-import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import GuestTreeSection from "./GuestTreeSection";
-import { DashboardProvider } from "./DashboardContext";
-import MemberDetailModal from "./MemberDetailModal";
-import { usePathname } from "next/navigation";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -95,15 +90,7 @@ function FamilyHistoryExcerpt() {
   );
 }
 
-interface LandingHeroProps {
-  siteName: string;
-  persons: import("@/types").Person[];
-  relationships: import("@/types").Relationship[];
-  isLoggedIn?: boolean;
-  userRootId?: string;
-}
-
-export default function LandingHero({ siteName, persons, relationships, isLoggedIn, userRootId }: LandingHeroProps) {
+export default function LandingHero() {
   const content = (
     <motion.div
       className="max-w-7xl text-center space-y-12 w-full relative z-10"
@@ -115,7 +102,7 @@ export default function LandingHero({ siteName, persons, relationships, isLogged
         className="space-y-6 sm:space-y-8 flex flex-col items-center"
         variants={fadeIn}
       >
-        <Link href="/dashboard" className="block w-full max-w-2xl">
+        <Link href="/dashboard/members?view=tree" className="block w-full max-w-2xl">
           <motion.div
             whileHover={{ scale: 1.02 }}
             className="relative overflow-hidden rounded-2xl group w-full"
@@ -137,10 +124,5 @@ export default function LandingHero({ siteName, persons, relationships, isLogged
     </motion.div>
   );
 
-  return (
-    <DashboardProvider>
-      {content}
-      {isLoggedIn && <MemberDetailModal />}
-    </DashboardProvider>
-  );
+  return <>{content}</>;
 }

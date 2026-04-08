@@ -11,8 +11,6 @@ export interface Profile {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  full_name?: string | null;
-  avatar_url?: string | null;
 }
 
 export interface AdminUserData {
@@ -43,12 +41,17 @@ export interface Person {
   occupation?: string | null;
   current_residence?: string | null;
 
+  // Lunar Date
+  death_lunar_year: number | null;
+  death_lunar_month: number | null;
+  death_lunar_day: number | null;
+
   // New fields
   is_deceased: boolean;
   is_in_law: boolean;
-  is_default_root_node?: boolean | null;
-  birth_order?: number | null;
-  generation?: number | null;
+  birth_order: number | null;
+  generation: number | null;
+  other_names: string | null;
 }
 
 export interface Relationship {
@@ -57,8 +60,8 @@ export interface Relationship {
   person_a: string; // UUID
   person_b: string; // UUID
   note?: string | null;
-  sort_order?: number | null;
   created_at: string;
+  updated_at: string;
 }
 
 // Helper types for UI
@@ -66,42 +69,4 @@ export interface PersonWithDetails extends Person {
   spouses?: Person[];
   children?: Person[];
   parents?: Person[];
-}
-
-export type EditRequestStatus = "pending" | "approved" | "rejected";
-
-export interface EditRequest {
-  id: string;
-  person_id: string;
-  user_id: string;
-  content: string;
-  status: EditRequestStatus;
-  admin_note: string | null;
-  created_at: string;
-  updated_at: string;
-  // Joined fields
-  persons?: { full_name: string } | null;
-  user_email?: string | null;
-}
-
-export interface UserRootNode {
-  user_id: string;
-  root_node_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UserComment {
-  id: string;
-  member_id: string;
-  user_id: string;
-  parent_id: string | null;
-  content: string;
-  created_at: string;
-  updated_at: string;
-  profiles?: {
-    full_name: string;
-    avatar_url: string | null;
-  } | null;
-  replies?: UserComment[];
 }

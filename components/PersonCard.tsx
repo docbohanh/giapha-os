@@ -1,7 +1,7 @@
 "use client";
 
 import { Person } from "@/types";
-import { formatDisplayDate } from "@/utils/dateHelpers";
+import { getAvatarBg } from "@/utils/styleHelprs";
 import Image from "next/image";
 import { useDashboard } from "./DashboardContext";
 import DefaultAvatar from "./DefaultAvatar";
@@ -23,10 +23,10 @@ export default function PersonCard({ person }: PersonCardProps) {
   };
 
   return (
-    <div
+    <button
       onClick={() => setMemberModalId(person.id)}
-      className={`group block relative bg-white/60 backdrop-blur-md p-2 sm:p-4 rounded-2xl shadow-sm border border-stone-200/60 hover:border-amber-300 hover:shadow-md hover:bg-white/90 transition-all duration-300 cursor-pointer overflow-hidden
-        ${isDeceased ? "opacity-80 grayscale-[0.3]" : ""}`}
+      className={`group block relative bg-white/60 p-2 sm:p-4 rounded-2xl shadow-sm border border-stone-200/60 hover:border-amber-300 hover:shadow-md hover:bg-white/90 transition-all duration-300 overflow-hidden
+        ${isDeceased ? "opacity-80 grayscalePer-[0.3]" : ""}`}
     >
       {/* Decorative gradient blob */}
       {/* <div
@@ -36,20 +36,20 @@ export default function PersonCard({ person }: PersonCardProps) {
       <div className="flex items-center space-x-4 relative z-10">
         <div className="relative">
           <div
-            className={`h-14 w-14 sm:h-16 sm:w-16 rounded-[8px] flex items-center justify-center text-xl font-bold text-white overflow-hidden shrink-0 shadow-lg ring-2 ring-white transition-transform duration-300 group-hover:scale-105
-            ${person.gender === "male" ? "bg-linear-to-br from-sky-400 to-sky-700" : person.gender === "female" ? "bg-linear-to-br from-rose-400 to-rose-700" : "bg-linear-to-br from-stone-400 to-stone-600"}`}
+            className={`size-14 sm:size-16 rounded-full flex items-center justify-center text-xl font-bold text-white overflow-hidden shrink-0 shadow-lg ring-2 ring-white transition-transform duration-300 group-hover:scale-105
+            ${getAvatarBg(person.gender)}`}
           >
             {person.avatar_url ? (
               <Image
                 unoptimized
                 src={person.avatar_url}
                 alt={person.full_name}
-                width={64}
-                height={64}
+                width={32}
+                height={32}
                 className="h-full w-full object-cover"
               />
             ) : (
-              <DefaultAvatar gender={person.gender} isDeceased={person.is_deceased} />
+              <DefaultAvatar gender={person.gender} size={32} />
             )}
           </div>
           {/* Gender Indicator Icon */}
@@ -65,12 +65,12 @@ export default function PersonCard({ person }: PersonCardProps) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-base sm:text-lg font-bold text-stone-900 group-hover:text-amber-700 transition-colors truncate mb-1.5">
-            {person.full_name.toUpperCase()}
+          <h3 className="text-base text-left sm:text-lg font-bold text-stone-900 group-hover:text-amber-700 transition-colors truncate mb-1.5">
+            {person.full_name}
           </h3>
           <p className="text-sm font-medium text-stone-500 truncate flex items-center gap-1.5">
             <svg
-              className="w-4 h-4 shrink-0 text-stone-400"
+              className="size-4 shrink-0 text-stone-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -83,30 +83,25 @@ export default function PersonCard({ person }: PersonCardProps) {
               />
             </svg>
             <span className="truncate">
-              {formatDisplayDate(
-                person.birth_year,
-                person.birth_month,
-                person.birth_day,
-              )}
+              {person.birth_year || "..."}
               {isDeceased &&
-                ` → ${formatDisplayDate(person.death_year, person.death_month, person.death_day)}`}
+                ` → ${person.death_lunar_year || person.death_year || "..."}`}
             </span>
           </p>
-          {(isDeceased || person.is_in_law) && (
+          {(isDeceased ||
+            person.is_in_law ||
+            person.birth_order != null ||
+            person.generation != null) && (
             <div className="flex flex-wrap items-center gap-1.5 shrink-0 mt-2">
-              {isDeceased && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-stone-100 text-stone-500 uppercase tracking-widest border border-stone-200/60 shadow-xs">
-                  Đã mất
-                </span>
-              )}
               {person.is_in_law && (
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold uppercase tracking-widest shadow-xs border ${person.gender === "male"
-                    ? "bg-sky-50 text-sky-700 border-sky-200/60"
-                    : person.gender === "female"
-                      ? "bg-rose-50 text-rose-700 border-rose-200/60"
-                      : "bg-stone-50 text-stone-700 border-stone-200/60"
-                    }`}
+                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold uppercase tracking-widest shadow-xs border ${
+                    person.gender === "male"
+                      ? "bg-sky-50 text-sky-700 border-sky-200/60"
+                      : person.gender === "female"
+                        ? "bg-rose-50 text-rose-700 border-rose-200/60"
+                        : "bg-stone-50 text-stone-700 border-stone-200/60"
+                  }`}
                 >
                   {person.gender === "male"
                     ? "Rể"
@@ -115,10 +110,27 @@ export default function PersonCard({ person }: PersonCardProps) {
                       : "Khách"}
                 </span>
               )}
+              {person.birth_order != null && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60 uppercase tracking-widest shadow-xs">
+                  {person.birth_order === 1
+                    ? "Con trưởng"
+                    : `Con thứ ${person.birth_order}`}
+                </span>
+              )}
+              {person.generation != null && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 uppercase tracking-widest shadow-xs">
+                  Đời thứ {person.generation}
+                </span>
+              )}
+              {isDeceased && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-stone-100 text-stone-500 uppercase tracking-widest border border-stone-200/60 shadow-xs">
+                  Đã mất
+                </span>
+              )}
             </div>
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 }

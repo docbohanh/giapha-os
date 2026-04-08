@@ -1,0 +1,196 @@
+import { getTodayLunar } from "@/utils/dateHelpers";
+import { computeEvents } from "@/utils/eventHelpers";
+import { getSupabase } from "@/utils/supabase/queries";
+import { ArrowRight, BarChart2, Cake, CalendarDays, Flower2, GitMerge, Network, Star } from "lucide-react";
+import Link from "next/link";
+
+const eventTypeConfig = {
+  birthday: {
+    icon: Cake,
+    label: "Sinh nhật",
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+  },
+  death_anniversary: {
+    icon: Flower2,
+    label: "Ngày giỗ",
+    color: "text-purple-600",
+    bg: "bg-purple-50",
+  },
+  custom_event: {
+    icon: Star,
+    label: "Sự kiện",
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+  },
+};
+
+export default async function LandingEventsSection() {
+  const supabase = await getSupabase();
+
+  const { data: persons } = await supabase
+    .from("persons")
+    .select(
+      "id, full_name, birth_year, birth_month, birth_day, death_year, death_month, death_day, death_lunar_year, death_lunar_month, death_lunar_day, is_deceased",
+    );
+
+  const { data: customEvents } = await supabase
+    .from("custom_events")
+    .select("id, name, content, event_date, location, created_by");
+
+  const allEvents = computeEvents(persons ?? [], customEvents ?? []);
+  const upcomingEvents = allEvents.filter(
+    (e) => e.daysUntil >= 0 && e.daysUntil <= 30,
+  );
+
+  const lunar = getTodayLunar();
+
+  return (
+    <>
+    <Link
+      href="/dashboard/events"
+      className="group relative block overflow-hidden rounded-3xl bg-white/80 backdrop-blur-sm border border-stone-200/60 shadow-sm hover:shadow-stone-100 hover:border-stone-400 transition-all duration-300 hover:-translate-y-1"
+    >
+      <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none opacity-50" />
+
+      <div className="relative p-6 sm:p-8 flex flex-col md:flex-row gap-6 sm:gap-8 items-center">
+        {/* Date section */}
+        <div className="md:w-[35%] w-full flex flex-col items-center md:items-start text-center md:text-left gap-4 md:border-r border-stone-100 md:pr-8">
+          <div className="size-16 rounded-2xl bg-stone-50 flex items-center justify-center shrink-0 border border-stone-100 shadow-sm text-stone-600 transition-transform duration-500 group-hover:scale-105 group-hover:shadow-md group-hover:border-stone-200">
+            <CalendarDays className="size-7" />
+          </div>
+          <div className="mt-1">
+            <p className="text-xl sm:text-2xl font-bold text-stone-800 tracking-tight">
+              {lunar.solarStr}
+            </p>
+            <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-50 border border-stone-100">
+              <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">
+                Âm lịch:
+              </span>
+              <span className="text-sm font-semibold text-stone-700">
+                {lunar.lunarDayStr}
+              </span>
+            </div>
+            <p className="text-sm pl-1 flex items-center justify-center md:justify-start gap-1 text-stone-500 mt-2 font-medium">
+              Năm {lunar.lunarYear}
+            </p>
+          </div>
+        </div>
+
+        {/* Events summary */}
+        <div className="md:w-[65%] w-full flex-1">
+          {upcomingEvents.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-stone-500 uppercase tracking-widest flex items-center gap-2.5">
+                  <span className="relative flex size-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full size-2 bg-amber-500" />
+                  </span>
+                  Sự kiện 30 ngày tới ({upcomingEvents.length})
+                </p>
+                <ArrowRight className="size-5 text-stone-300 group-hover:text-stone-500 group-hover:translate-x-1 transition-all duration-300" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {upcomingEvents.slice(0, 4).map((evt, i) => {
+                  const cfg = eventTypeConfig[evt.type];
+                  const Icon = cfg.icon;
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3.5 p-3 rounded-2xl bg-stone-50/50 hover:bg-stone-50 border border-transparent hover:border-stone-100 transition-all duration-300"
+                    >
+                      <div className={`size-10 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0 shadow-sm border border-white`}>
+                        <Icon className={`size-4 ${cfg.color}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-semibold text-stone-700 truncate block">
+                          {evt.personName}
+                        </span>
+                        <span className="text-xs text-stone-500 font-medium pt-0.5 block">
+                          {evt.daysUntil === 0
+                            ? "Hôm nay"
+                            : evt.daysUntil === 1
+                              ? "Ngày mai"
+                              : `${evt.daysUntil} ngày nữa`}{" "}
+                          · {evt.eventDateLabel}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {upcomingEvents.length > 4 && (
+                <p className="text-xs text-stone-400 mt-2 text-center sm:text-left font-medium">
+                  + {upcomingEvents.length - 4} sự kiện khác đang chờ...
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full gap-3 opacity-80 py-6">
+              <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100 text-stone-400 transition-transform duration-500 group-hover:scale-105 group-hover:text-stone-500">
+                <CalendarDays className="size-6" />
+              </div>
+              <p className="text-stone-500 text-center font-medium px-4">
+                Không có sự kiện nào trong 30 ngày tới.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-stone-400 mt-1 font-medium group-hover:text-stone-600 transition-colors">
+                <span>Xem sự kiện trong năm</span>
+                <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </Link>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mt-4">
+      {[
+        {
+          title: "Cây gia phả",
+          description: "Xem và tương tác với sơ đồ dòng họ",
+          icon: <Network className="size-7 text-amber-600" />,
+          href: "/dashboard/members",
+          bgColor: "bg-amber-50",
+          borderColor: "border-amber-200/60",
+          hoverColor: "hover:border-amber-400 hover:shadow-amber-100",
+        },
+        {
+          title: "Tra cứu danh xưng",
+          description: "Hệ thống gọi tên họ hàng chuẩn xác",
+          icon: <GitMerge className="size-7 text-blue-600" />,
+          href: "/dashboard/kinship",
+          bgColor: "bg-blue-50",
+          borderColor: "border-blue-200/60",
+          hoverColor: "hover:border-blue-400 hover:shadow-blue-100",
+        },
+        {
+          title: "Thống kê gia phả",
+          description: "Tổng quan dữ liệu và biểu đồ phân tích",
+          icon: <BarChart2 className="size-7 text-purple-600" />,
+          href: "/dashboard/stats",
+          bgColor: "bg-purple-50",
+          borderColor: "border-purple-200/60",
+          hoverColor: "hover:border-purple-400 hover:shadow-purple-100",
+        },
+      ].map((feat) => (
+        <Link
+          key={feat.href}
+          href={feat.href}
+          className={`group flex items-center gap-4 p-5 rounded-2xl bg-white/80 backdrop-blur-sm border ${feat.borderColor} ${feat.hoverColor} transition-all duration-300 hover:-translate-y-1 shadow-sm text-left`}
+        >
+          <div className={`size-12 rounded-xl flex items-center justify-center shrink-0 ${feat.bgColor}`}>
+            {feat.icon}
+          </div>
+          <div className="min-w-0">
+            <h4 className="text-base font-bold text-stone-800 group-hover:text-amber-700 transition-colors">
+              {feat.title}
+            </h4>
+            <p className="text-xs text-stone-500 mt-0.5">{feat.description}</p>
+          </div>
+        </Link>
+      ))}
+    </div>
+    </>
+  );
+}
