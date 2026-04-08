@@ -1,6 +1,7 @@
 import { getTodayLunar } from "@/utils/dateHelpers";
 import { computeEvents } from "@/utils/eventHelpers";
-import { getIsAdmin, getSupabase } from "@/utils/supabase/queries";
+import { createClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 import {
   ArrowRight,
   BarChart2,
@@ -9,12 +10,13 @@ import {
   Database,
   Flower2,
   GitMerge,
-  Lock,
   Network,
   Star,
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import FeatureGrid from "./FeatureGrid";
+import LoginPrompt from "./LoginPrompt";
 
 /* ── Event type helpers ───────────────────────────────────────────── */
 const eventTypeConfig = {
@@ -39,27 +41,37 @@ const eventTypeConfig = {
 };
 
 export default async function Launchpad() {
-  const isAdmin = await getIsAdmin();
-  const supabase = await getSupabase();
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
 
   const { data: { user } } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
 
-  /* ── Fetch events data ────────────────────────────────────────── */
-  const { data: persons } = await supabase
-    .from("persons")
-    .select(
-      "id, full_name, birth_year, birth_month, birth_day, death_year, death_month, death_day, death_lunar_year, death_lunar_month, death_lunar_day, is_deceased",
-    );
+  /* ── Check admin ──────────────────────────────────────────────── */
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    isAdmin = profile?.role === "admin";
+  }
 
-  const { data: customEvents } = await supabase
-    .from("custom_events")
-    .select("id, name, content, event_date, location, created_by");
+  /* ── Fetch events data (only when logged in) ──────────────────── */
+  let upcomingEvents: ReturnType<typeof computeEvents> = [];
 
-  const allEvents = computeEvents(persons ?? [], customEvents ?? []);
-  const upcomingEvents = allEvents.filter(
-    (e) => e.daysUntil >= 0 && e.daysUntil <= 30,
-  );
+  if (isLoggedIn) {
+    const [{ data: persons }, { data: customEvents }] = await Promise.all([
+      supabase.from("persons").select(
+        "id, full_name, birth_year, birth_month, birth_day, death_year, death_month, death_day, is_deceased",
+      ),
+      supabase.from("custom_events").select("id, name, content, event_date, location, created_by"),
+    ]);
+
+    const allEvents = computeEvents(persons ?? [], customEvents ?? []);
+    upcomingEvents = allEvents.filter((e) => e.daysUntil >= 0 && e.daysUntil <= 30);
+  }
 
   const lunar = getTodayLunar();
 
@@ -183,14 +195,7 @@ export default async function Launchpad() {
           {/* Events summary */}
           <div className="md:w-[65%] w-full flex-1">
             {!isLoggedIn ? (
-              <div className="flex flex-col items-center justify-center h-full gap-3 py-6">
-                <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100 text-stone-400">
-                  <Lock className="size-6" />
-                </div>
-                <p className="text-stone-500 text-center font-medium px-4">
-                  Đăng nhập thành viên để xem sự kiện
-                </p>
-              </div>
+              <LoginPrompt message="Đăng nhập thành viên để xem sự kiện" />
             ) : upcomingEvents.length > 0 ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -259,65 +264,12 @@ export default async function Launchpad() {
       </Link>
 
       {/* ── Feature Grid ──────────────────────────────────── */}
-      <div className="space-y-12">
-        <section>
-          {/* <h3 className="text-xl font-serif font-bold text-stone-700 mb-6 flex items-center gap-2">
-            <span className="w-8 h-px bg-stone-300 rounded-full"></span>
-            Chức năng chung
-          </h3> */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {publicFeatures.map((feat) => (
-              <Link
-                key={feat.href}
-                href={feat.href}
-                className={`group flex flex-col p-6 rounded-2xl bg-white border ${feat.borderColor} ${feat.hoverColor} transition-all duration-300 hover:-translate-y-1 shadow-sm`}
-              >
-                <div
-                  className={`size-14 rounded-xl flex items-center justify-center mb-5 ${feat.bgColor} transition-colors duration-300 group-hover:bg-white border border-transparent group-hover:${feat.borderColor}`}
-                >
-                  {feat.icon}
-                </div>
-                <h4 className="text-lg font-bold text-stone-800 mb-2 group-hover:text-amber-700 transition-colors">
-                  {feat.title}
-                </h4>
-                <p className="text-sm text-stone-500 line-clamp-2">
-                  {feat.description}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {isAdmin && (
-          <section>
-            <h3 className="text-xl font-serif font-bold text-rose-800 mb-6 flex items-center gap-2">
-              <span className="w-8 h-px bg-rose-200 rounded-full"></span>
-              Quản trị viên
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {adminFeatures.map((feat) => (
-                <Link
-                  key={feat.href}
-                  href={feat.href}
-                  className={`group flex flex-col p-6 rounded-2xl bg-white border ${feat.borderColor} ${feat.hoverColor} transition-all duration-300 hover:-translate-y-1 shadow-sm`}
-                >
-                  <div
-                    className={`size-14 rounded-xl flex items-center justify-center mb-5 ${feat.bgColor} transition-colors duration-300 group-hover:bg-white border border-transparent group-hover:${feat.borderColor}`}
-                  >
-                    {feat.icon}
-                  </div>
-                  <h4 className="text-lg font-bold text-stone-800 mb-2 group-hover:text-rose-700 transition-colors">
-                    {feat.title}
-                  </h4>
-                  <p className="text-sm text-stone-500 line-clamp-2">
-                    {feat.description}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
+      <FeatureGrid
+        features={publicFeatures}
+        isLoggedIn={isLoggedIn}
+        adminFeatures={adminFeatures}
+        isAdmin={isAdmin}
+      />
     </main>
   );
 }

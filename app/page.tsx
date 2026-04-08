@@ -58,7 +58,7 @@ export default async function HomePage() {
           </div>
         </Suspense>
       </main>
-      <div className="relative z-10 w-full mt-16 md:mt-24 px-4 pb-16">
+      <div className="relative z-1 w-full mt-2 md:mt-4 px-4 pb-16">        
         <GuestTreeSection
           persons={persons}
           relationships={relationships}

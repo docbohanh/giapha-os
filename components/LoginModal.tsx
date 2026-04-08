@@ -49,7 +49,7 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
     return regex.test(pass);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -61,7 +61,7 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
         if (error) {
           setError(error.message);
         } else {
-          router.push("/dashboard");
+          router.push("/");
           router.refresh();
           onClose();
         }
@@ -136,7 +136,7 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
