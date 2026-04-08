@@ -57,15 +57,15 @@ export default async function HomePage() {
             <Launchpad />
           </div>
         </Suspense>
-        <div className="mt-16 md:mt-24 w-full max-w-7xl mx-auto">
-          <GuestTreeSection
-            persons={persons}
-            relationships={relationships}
-            isLoggedIn={isLoggedIn}
-            userRootId={userRootId}
-          />
-        </div>
       </main>
+      <div className="relative z-10 w-full mt-16 md:mt-24 px-4 pb-16">
+        <GuestTreeSection
+          persons={persons}
+          relationships={relationships}
+          isLoggedIn={isLoggedIn}
+          userRootId={userRootId}
+        />
+      </div>
     </div>
   );
 }

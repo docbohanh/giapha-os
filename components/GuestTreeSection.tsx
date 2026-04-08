@@ -1,10 +1,11 @@
 "use client";
 
 import { Person, Relationship } from "@/types";
-import { ListTree, Network, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowRight, ListTree, Network, ZoomIn, ZoomOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import FamilyTree from "./FamilyTree";
+import LoginModal from "./LoginModal";
 import MindmapTree from "./MindmapTree";
 import VisibilityToggles from "./VisibilityToggles";
 
@@ -28,6 +29,7 @@ export default function GuestTreeSection({
 }: GuestTreeSectionProps) {
     const [view, setView] = useState<"tree" | "mindmap">("tree");
     const [scale, setScale] = useState(1);
+    const [loginOpen, setLoginOpen] = useState(false);
     const MIN_SCALE = 0.3;
     const MAX_SCALE = 2;
     const zoomIn = () => setScale((s) => Math.min(MAX_SCALE, +(s + 0.1).toFixed(2)));
@@ -225,14 +227,19 @@ export default function GuestTreeSection({
                     <p className="text-center text-xs text-stone-400 italic">
                         Đăng nhập thành viên để xem chi tiết và chỉnh sửa thông tin
                     </p>
-                    <a
-                        href="/login"
-                        className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors shadow-sm"
+                    <button
+                        onClick={() => setLoginOpen(true)}
+                        className="group inline-flex items-center justify-center gap-1 px-2 py-2 sm:px-6 sm:py-3 text-base sm:text-lg font-bold text-white bg-stone-900 border border-stone-800 hover:bg-stone-800 hover:border-stone-700 rounded-2xl shadow-xl shadow-stone-900/10 hover:shadow-2xl hover:shadow-stone-900/20 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 w-full sm:w-auto overflow-hidden relative"
                     >
-                        Đăng nhập
-                    </a>
+                        <span className="relative z-5 flex items-center gap-3">
+                            Đăng nhập
+                            <ArrowRight className="size-5 group-hover:translate-x-1.5 transition-transform" />
+                        </span>
+                    </button>
                 </div>
             )}
+
+            <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
         </div>
     );
 }
