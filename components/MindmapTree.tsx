@@ -175,9 +175,9 @@ export default function MindmapTree({
                     <div className={`flex flex-col ${showAvatar ? "min-w-0 flex-1" : ""}`}>
                       <span className={`font-bold text-[14px] text-stone-900 group-hover/card:text-amber-700 transition-colors leading-tight mb-0.5 ${showAvatar ? "truncate" : "break-words whitespace-normal"}`}>
                         {showAvatar
-                          ? data.person.full_name
+                          ? data.person.full_name.toUpperCase()
                           : data.person.full_name.split(" ").map((word, i) => (
-                            <span key={i} className="block text-center">{word}</span>
+                            <span key={i} className="block text-center">{word.toUpperCase()}</span>
                           ))}
                       </span>
                       <span className="text-[11px] text-stone-500 font-medium truncate flex items-center gap-1">

@@ -1,6 +1,7 @@
 import { getPublicFamilyData } from "@/app/actions/publicData";
 import Footer from "@/components/Footer";
 import LandingHero from "@/components/LandingHero";
+import Launchpad from "@/components/Launchpad";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import config from "./config";
@@ -49,6 +50,9 @@ export default async function HomePage() {
             isLoggedIn={isLoggedIn}
             userRootId={userRootId}
           />
+        </Suspense>
+        <Suspense fallback={<div className="h-64 w-full flex items-center justify-center text-stone-400">Đang tải...</div>}>
+          <Launchpad />
         </Suspense>
       </main>
 

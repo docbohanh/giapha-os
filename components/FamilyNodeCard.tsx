@@ -114,11 +114,11 @@ export default function FamilyNodeCard({
           }}
         >
           {showAvatar ? (
-            person.full_name
+            person.full_name.toUpperCase()
           ) : (
             person.full_name.split(" ").map((word, index) => (
               <span key={index} className="block whitespace-nowrap">
-                {word}
+                {word.toUpperCase()}
               </span>
             ))
           )}

@@ -34,7 +34,7 @@ function FamilyHistoryExcerpt() {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="max-w-3xl mx-auto text-left space-y-4 text-sm sm:text-base text-stone-600 leading-relaxed bg-white/60 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-stone-200/60">
+    <div className="max-w-7xl mx-auto text-left space-y-4 text-sm sm:text-base text-stone-600 leading-relaxed bg-white/60 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-stone-200/60">
       <p className="font-semibold text-amber-800 italic">
         TRÍCH ĐOẠN GIA PHẢ HỌ LÃ HỮU
       </p>
@@ -133,33 +133,6 @@ export default function LandingHero({ siteName, persons, relationships, isLogged
         </Link>
 
         <FamilyHistoryExcerpt />
-      </motion.div>
-
-      <motion.div
-        className="pt-6 flex flex-col gap-6 items-center w-full px-4 sm:px-0 relative"
-        variants={fadeIn}
-      >
-        {/* Guest read-only tree preview */}
-        <GuestTreeSection
-          persons={persons}
-          relationships={relationships}
-          isLoggedIn={isLoggedIn}
-          userRootId={userRootId}
-        />
-
-        {/* Login CTA */}
-        <div className="relative flex justify-center w-full mt-[56px]">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-16 bg-amber-500/30 blur-2xl rounded-full z-0 hidden sm:block"></div>
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/login"}
-            className="group inline-flex items-center justify-center gap-2 px-8 py-4 sm:px-10 sm:py-5 text-base sm:text-lg font-bold text-white bg-stone-900 border border-stone-800 hover:bg-stone-800 hover:border-stone-700 rounded-2xl shadow-xl shadow-stone-900/10 hover:shadow-2xl hover:shadow-stone-900/20 transition-all duration-300 hover:-translate-y-1 active:translate-y-0 cursor-pointer w-full sm:w-auto overflow-hidden relative"
-          >
-            <span className="relative z-10 flex items-center gap-3">
-              {isLoggedIn ? "Xem chi tiết" : "Đăng nhập"}
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
-            </span>
-          </Link>
-        </div>
       </motion.div>
     </motion.div>
   );

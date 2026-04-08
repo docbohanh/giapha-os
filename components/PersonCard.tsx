@@ -66,7 +66,7 @@ export default function PersonCard({ person }: PersonCardProps) {
 
         <div className="flex-1 min-w-0">
           <h3 className="text-base sm:text-lg font-bold text-stone-900 group-hover:text-amber-700 transition-colors truncate mb-1.5">
-            {person.full_name}
+            {person.full_name.toUpperCase()}
           </h3>
           <p className="text-sm font-medium text-stone-500 truncate flex items-center gap-1.5">
             <svg
