@@ -1,20 +1,14 @@
 "use client";
 
-import config from "@/app/config";
 import Footer from "@/components/Footer";
 import { createClient } from "@/utils/supabase/client";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ArrowLeft,
-  Info,
-  KeyRound,
-  Mail,
-  Shield,
-  UserPlus,
-} from "lucide-react";
+import { ArrowLeft, KeyRound, Mail, Shield, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+
+type AuthMode = "login" | "signup" | "forgot_password";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -26,34 +20,22 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
-      if (hostname === config.demoDomain) {
+      if (hostname === "localhost" || hostname === "giapha-os.homielab.com") {
         setIsDemo(true);
-        setEmail("giaphaos@homielab.com");
-        setPassword("giaphaos");
       }
     }
   }, []);
 
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
 
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<AuthMode>("login");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    }
+  const validatePassword = (pass: string) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return regex.test(pass);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,7 +45,7 @@ export default function LoginPage() {
     setSuccessMessage(null);
 
     try {
-      if (isLogin) {
+      if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -75,67 +57,95 @@ export default function LoginPage() {
           router.push("/dashboard");
           router.refresh();
         }
-      } else {
+      } else if (mode === "signup") {
         if (password !== confirmPassword) {
           setError("Mật khẩu xác nhận không khớp.");
           setLoading(false);
           return;
         }
 
-        // 1. Try to sign up
+        if (!validatePassword(password)) {
+          setError(
+            "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.",
+          );
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
 
         if (error) {
-          // Check if error is related to missing database schema/tables
-          if (
-            error.message.includes("relation") &&
-            error.message.includes("does not exist")
-          ) {
-            router.push("/setup");
-            return;
-          }
-
           setError(error.message);
         } else if (data.user?.identities && data.user.identities.length === 0) {
           setError(
             "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.",
           );
         } else {
-          if (data.session) {
-            router.push("/dashboard");
-            router.refresh();
-          } else {
-            // Attempt to sign in immediately (catches auto-confirmed first admin)
-            const { data: signInData, error: signInError } =
-              await supabase.auth.signInWithPassword({
-                email,
-                password,
-              });
+          setSuccessMessage(
+            "Đăng ký thành công! Tài khoản của bạn đang chờ Admin phê duyệt để kích hoạt.",
+          );
+          setMode("login");
+          setConfirmPassword("");
+          setPassword("");
+        }
+      } else if (mode === "forgot_password") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard/profile`,
+        });
 
-            if (!signInError && signInData.session) {
-              router.push("/dashboard");
-              router.refresh();
-            } else {
-              setSuccessMessage(
-                "Đăng ký thành công! Vui lòng chờ admin kích hoạt tài khoản để xem nội dung.",
-              );
-              setIsLogin(true); // Switch back to login view
-              setConfirmPassword(""); // clear confirm password
-              setPassword(""); // clear password
-            }
-          }
+        if (error) {
+          setError(error.message);
+        } else {
+          setSuccessMessage(
+            "Yêu cầu đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra email của bạn.",
+          );
+          setMode("login");
         }
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      setError("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleOAuthLogin = async (provider: "google" | "facebook") => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const currentTitle =
+    mode === "login"
+      ? "Đăng nhập"
+      : mode === "signup"
+        ? "Đăng ký"
+        : "Quên mật khẩu";
+
+  const currentDesc =
+    mode === "login"
+      ? "Đăng nhập để truy cập gia phả."
+      : mode === "signup"
+        ? "Tạo tài khoản thành viên mới."
+        : "Nhập email để nhận liên kết đặt lại mật khẩu.";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafaf9] select-none selection:bg-amber-200 selection:text-amber-900 relative overflow-hidden">
@@ -150,6 +160,7 @@ export default function LoginPage() {
 
       <div className="flex-1 flex items-center justify-center px-4 py-12 relative z-10 w-full">
         <motion.div
+          key={mode}
           className="max-w-md w-full bg-white/70 backdrop-blur-xl p-8 sm:p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/80 relative overflow-hidden"
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -162,27 +173,14 @@ export default function LoginPage() {
               href="/"
               className="inline-flex items-center justify-center p-3.5 bg-white rounded-2xl mb-5 shadow-sm ring-1 ring-stone-100 hover:scale-105 hover:shadow-md transition-all duration-300"
             >
-              <Shield className="size-8 text-amber-600" />
+              <Shield className="w-8 h-8 text-amber-600" />
             </Link>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold text-stone-900 tracking-tight">
-              {isLogin ? "Đăng nhập" : "Đăng ký"}
+            <h2 className="text-3xl sm:text-4xl font-sans font-bold text-stone-900 tracking-tight">
+              {currentTitle}
             </h2>
             <p className="mt-3 text-sm text-stone-500 font-medium tracking-wide">
-              {isLogin
-                ? "Đăng nhập để truy cập gia phả."
-                : "Tạo tài khoản thành viên mới."}
+              {currentDesc}
             </p>
-            {isDemo && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-3 bg-amber-50 border border-amber-200/60 rounded-xl"
-              >
-                <p className="text-[13px] font-semibold text-amber-800">
-                  Website Demo. Dữ liệu đều không có thật.
-                </p>
-              </motion.div>
-            )}
           </div>
 
           <form className="space-y-5 relative z-10" onSubmit={handleSubmit}>
@@ -195,14 +193,14 @@ export default function LoginPage() {
                   Email
                 </label>
                 <div className="relative flex items-center group">
-                  <Mail className="absolute left-3.5 size-5 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
+                  <Mail className="absolute left-3.5 w-5 h-5 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
                   <input
                     id="email-address"
                     name="email"
                     type="email"
                     autoComplete="email"
                     required
-                    className="bg-white/50 text-stone-900 placeholder-stone-400 block w-full rounded-xl border border-stone-200/80 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] focus:border-amber-400 focus:ring-amber-400 focus:bg-white pl-11 pr-4 py-3.5 transition-all duration-200 outline-none"
+                    className="bg-white/50 backdrop-blur-sm text-stone-900 placeholder-stone-400 block w-full rounded-xl border border-stone-200/80 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] focus:border-amber-400 focus:ring-amber-400 focus:bg-white pl-11 pr-4 py-3.5 transition-all duration-200 outline-none"
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -210,31 +208,50 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="relative">
-                <label
-                  htmlFor="password"
-                  className="block text-[13px] font-semibold text-stone-600 mb-1.5 ml-1"
-                >
-                  Mật khẩu
-                </label>
-                <div className="relative flex items-center group">
-                  <KeyRound className="absolute left-3.5 size-5 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete={isLogin ? "current-password" : "new-password"}
-                    required
-                    className="bg-white/50 text-stone-900 placeholder-stone-400 block w-full rounded-xl border border-stone-200/80 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] focus:border-amber-400 focus:ring-amber-400 focus:bg-white pl-11 pr-4 py-3.5 transition-all duration-200 outline-none"
-                    placeholder="Nhập mật khẩu"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+              {mode !== "forgot_password" && (
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-1.5 ml-1">
+                    <label
+                      htmlFor="password"
+                      className="block text-[13px] font-semibold text-stone-600"
+                    >
+                      Mật khẩu
+                    </label>
+                    {/* {mode === "login" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode("forgot_password");
+                          setError(null);
+                          setSuccessMessage(null);
+                        }}
+                        className="text-[12px] font-bold text-amber-600 hover:text-amber-700 transition-colors"
+                      >
+                        Quên mật khẩu?
+                      </button>
+                    )} */}
+                  </div>
+                  <div className="relative flex items-center group">
+                    <KeyRound className="absolute left-3.5 w-5 h-5 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete={
+                        mode === "login" ? "current-password" : "new-password"
+                      }
+                      required
+                      className="bg-white/50 backdrop-blur-sm text-stone-900 placeholder-stone-400 block w-full rounded-xl border border-stone-200/80 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] focus:border-amber-400 focus:ring-amber-400 focus:bg-white pl-11 pr-4 py-3.5 transition-all duration-200 outline-none"
+                      placeholder="Nhập mật khẩu"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <AnimatePresence>
-                {!isLogin && (
+                {mode === "signup" && (
                   <motion.div
                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
                     animate={{ opacity: 1, height: "auto", marginTop: 16 }}
@@ -249,14 +266,14 @@ export default function LoginPage() {
                       Xác nhận mật khẩu
                     </label>
                     <div className="relative flex items-center group">
-                      <KeyRound className="absolute left-3.5 size-5 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
+                      <KeyRound className="absolute left-3.5 w-5 h-5 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
                       <input
                         id="confirmPassword"
                         name="confirmPassword"
                         type="password"
                         autoComplete="new-password"
-                        required={!isLogin}
-                        className="bg-white/50 text-stone-900 placeholder-stone-400 block w-full rounded-xl border border-stone-200/80 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] focus:border-amber-400 focus:ring-amber-400 focus:bg-white pl-11 pr-4 py-3.5 transition-all duration-200 outline-none"
+                        required={mode === "signup"}
+                        className="bg-white/50 backdrop-blur-sm text-stone-900 placeholder-stone-400 block w-full rounded-xl border border-stone-200/80 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] focus:border-amber-400 focus:ring-amber-400 focus:bg-white pl-11 pr-4 py-3.5 transition-all duration-200 outline-none"
                         placeholder="Nhập lại mật khẩu"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
@@ -322,8 +339,12 @@ export default function LoginPage() {
                   </span>
                 ) : (
                   <>
-                    {isLogin ? "Đăng nhập" : "Tạo tài khoản"}
-                    {!isLogin && <UserPlus className="size-4 ml-1" />}
+                    {mode === "login"
+                      ? "Đăng nhập"
+                      : mode === "signup"
+                        ? "Tạo tài khoản"
+                        : "Gửi yêu cầu"}
+                    {mode === "signup" && <UserPlus className="w-4 h-4 ml-1" />}
                   </>
                 )}
               </button>
@@ -331,48 +352,67 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (isLogin && isDemo) {
-                    setError(
-                      "Đây là trang demo, bạn không cần phải tạo tài khoản. Hãy sử dụng tài khoản demo để truy cập với toàn bộ quyền.",
-                    );
-                    return;
+                  if (mode === "login") {
+                    setMode("signup");
+                  } else {
+                    setMode("login");
                   }
-                  setIsLogin(!isLogin);
                   setError(null);
                   setSuccessMessage(null);
                 }}
                 className="w-full text-sm font-semibold text-stone-600 hover:text-stone-900 bg-white hover:bg-stone-50 border border-stone-200/80 py-3.5 rounded-xl shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] focus:outline-none transition-all duration-200"
               >
-                {isLogin
+                {mode === "login"
                   ? "Chưa có tài khoản? Đăng ký ngay"
-                  : "Đã có tài khoản? Đăng nhập"}
+                  : mode === "signup"
+                    ? "Đã có tài khoản? Đăng nhập"
+                    : "Quay lại đăng nhập"}
               </button>
 
               <div className="relative flex items-center py-2 opacity-60">
                 <div className="grow border-t border-stone-200"></div>
                 <span className="shrink-0 mx-4 text-stone-400 text-[11px] uppercase tracking-wider font-bold">
-                  Hoặc
+                  Hoặc đăng nhập với
                 </span>
                 <div className="grow border-t border-stone-200"></div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="w-full flex justify-center items-center gap-3 py-3.5 px-4 text-sm font-semibold text-stone-700 bg-white hover:bg-stone-50 border border-stone-200/80 rounded-xl shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] focus:outline-none transition-all duration-200 disabled:opacity-70 disabled:cursor-wait"
-              >
-                <svg className="size-5" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-                Đăng nhập với Google
-              </button>
-
-              <div className="relative flex items-center py-2 opacity-60">
-                <div className="grow border-t border-stone-200"></div>
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleOAuthLogin("google")}
+                  className="flex items-center justify-center gap-2.5 py-3 px-4 bg-white border border-stone-200 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 transition-all duration-200 shadow-sm"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-1 .67-2.28 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.67-.35-1.39-.35-2.09s.13-1.42.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.14-4.53z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                  Google
+                </button>
+                {/* <button
+                  type="button"
+                  onClick={() => handleOAuthLogin("facebook")}
+                  className="flex items-center justify-center gap-2.5 py-3 px-4 bg-[#1877F2] border border-[#1877F2] rounded-xl text-sm font-bold text-white hover:bg-[#166fe5] transition-all duration-200 shadow-sm"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                  Facebook
+                </button> */}
               </div>
             </div>
           </form>
@@ -381,21 +421,13 @@ export default function LoginPage() {
 
       <Link
         href="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-stone-500 hover:text-stone-900 font-semibold text-sm transition-all duration-300 group bg-white/60 px-5 py-2.5 rounded-full shadow-sm border border-stone-200 hover:border-stone-300 hover:shadow-md"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-stone-500 hover:text-stone-900 font-semibold text-sm transition-all duration-300 group bg-white/60 px-5 py-2.5 rounded-full backdrop-blur-md shadow-sm border border-stone-200 hover:border-stone-300 hover:shadow-md"
       >
-        <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform" />
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         Trang chủ
       </Link>
 
-      <Link
-        href="/about"
-        className="absolute top-6 right-6 z-20 flex items-center gap-2 text-stone-500 hover:text-stone-900 font-semibold text-sm transition-all duration-300 group bg-white/60 px-5 py-2.5 rounded-full shadow-sm border border-stone-200 hover:border-stone-300 hover:shadow-md"
-      >
-        <Info className="size-4 group-hover:scale-110 transition-transform" />
-        Giới thiệu
-      </Link>
-
-      {/* <Footer className="bg-transparent relative z-10 border-none mt-auto" /> */}
+      <Footer className="bg-transparent relative z-10 border-none mt-auto" />
     </div>
   );
 }

@@ -51,7 +51,7 @@ export function getSolarDateString(
   if (!year || !month || !day) return "Chưa rõ";
 
   try {
-    const lunar = Lunar.fromYmd(
+    const lunar = (Lunar as any).fromYmd(
       year,
       parseInt(month.toString()),
       parseInt(day.toString()),
@@ -248,7 +248,26 @@ export function getTodayLunar() {
     }),
     lunarDay: lunar.getDay(),
     lunarMonth: Math.abs(lunar.getMonth()),
-    lunarYear: ganZhiToVietnamese(lunar.getYearInGanZhi()),
+    lunarYear: ganZhiToVietnamese((lunar as any).getYearInGanZhi()),
     lunarDayStr: `${lunar.getDay()} tháng ${Math.abs(lunar.getMonth())}`,
   };
+}
+
+
+export function timeAgo(date: Date | string | number): string {
+  const now = new Date();
+  const diff = now.getTime() - new Date(date).getTime();
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+
+  if (seconds < 60) return "vừa xong";
+  if (minutes < 60) return `${minutes} phút trước`;
+  if (hours < 24) return `${hours} giờ trước`;
+  if (days < 30) return `${days} ngày trước`;
+  if (months < 12) return `${months} tháng trước`;
+  return `${years} năm trước`;
 }

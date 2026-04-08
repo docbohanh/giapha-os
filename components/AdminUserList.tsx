@@ -6,11 +6,10 @@ import {
   deleteUser,
   toggleUserStatus,
 } from "@/app/actions/user";
-import config from "@/app/config";
 import { AdminUserData, UserRole } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
 import { Trash } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface AdminUserListProps {
   initialUsers: AdminUserData[];
@@ -31,13 +30,6 @@ export default function AdminUserList({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [notification, setNotification] = useState<Notification | null>(null);
-  const [isDemo, setIsDemo] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsDemo(window.location.hostname === config.demoDomain);
-    }
-  }, []);
 
   const showNotification = (
     message: string,
@@ -48,13 +40,6 @@ export default function AdminUserList({
   };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
-    if (isDemo) {
-      showNotification(
-        "Đây là tài khoản demo cho mọi người sử dụng, vui lòng không thay đổi thông tin này.",
-        "info",
-      );
-      return;
-    }
     try {
       setLoadingId(userId);
       const result = await changeUserRole(userId, newRole);
@@ -80,13 +65,6 @@ export default function AdminUserList({
   };
 
   const handleStatusChange = async (userId: string, newStatus: boolean) => {
-    if (isDemo) {
-      showNotification(
-        "Đây là tài khoản demo cho mọi người sử dụng, vui lòng không thay đổi thông tin này.",
-        "info",
-      );
-      return;
-    }
     try {
       setLoadingId(userId);
       const result = await toggleUserStatus(userId, newStatus);
@@ -117,13 +95,6 @@ export default function AdminUserList({
   };
 
   const handleDelete = async (userId: string) => {
-    if (isDemo) {
-      showNotification(
-        "Đây là tài khoản demo cho mọi người sử dụng, vui lòng không thay đổi thông tin này.",
-        "info",
-      );
-      return;
-    }
     if (
       !confirm(
         "Bạn có chắc chắn muốn xóa user này khỏi hệ thống vĩnh viễn không?",
@@ -154,14 +125,6 @@ export default function AdminUserList({
 
   const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isDemo) {
-      showNotification(
-        "Đây là trang demo, chức năng tạo người dùng bị hạn chế.",
-        "info",
-      );
-      setIsCreateModalOpen(false);
-      return;
-    }
     setIsCreating(true);
     const formData = new FormData(e.currentTarget);
     try {
@@ -191,19 +154,19 @@ export default function AdminUserList({
 
   return (
     <div className="space-y-6 relative">
+      {/* Animated Toast Notification */}
       <AnimatePresence>
         {notification && (
           <motion.div
             initial={{ opacity: 0, y: -20, x: "-50%" }}
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: -20, x: "-50%" }}
-            className={`fixed top-1/2 left-1/2 z-100 px-6 py-3 rounded-xl shadow-lg border flex items-center gap-3 min-w-[320px] max-w-[90vw] ${
-              notification.type === "success"
-                ? "bg-emerald-50/90 border-emerald-200 text-emerald-800"
-                : notification.type === "error"
-                  ? "bg-red-50/90 border-red-200 text-red-800"
-                  : "bg-amber-50/90 border-amber-200 text-amber-800"
-            }`}
+            className={`fixed top-24 left-1/2 z-[100] px-6 py-3 rounded-xl shadow-lg border flex items-center gap-3 min-w-[320px] max-w-[90vw] ${notification.type === "success"
+              ? "bg-emerald-50/90 border-emerald-200 text-emerald-800"
+              : notification.type === "error"
+                ? "bg-red-50/90 border-red-200 text-red-800"
+                : "bg-amber-50/90 border-amber-200 text-amber-800"
+              }`}
           >
             {notification.type === "success" && (
               <svg
@@ -258,7 +221,7 @@ export default function AdminUserList({
       <div className="flex justify-end">
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="btn-primary"
+          className="bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-5 py-2.5 rounded-xl transition-all duration-300 font-medium text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
         >
           <svg
             className="size-4"
@@ -311,13 +274,12 @@ export default function AdminUserList({
                   <td className="px-6 py-4">
                     {user.id === currentUserId ? (
                       <span
-                        className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
-                          user.role === "admin"
+                        className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.role === "admin"
                             ? "bg-amber-100 text-amber-800 border border-amber-200"
                             : user.role === "editor"
                               ? "bg-sky-100 text-sky-800 border border-sky-200"
                               : "bg-stone-100 text-stone-600 border border-stone-200"
-                        }`}
+                          }`}
                       >
                         {user.role}
                       </span>
@@ -328,7 +290,7 @@ export default function AdminUserList({
                           handleRoleChange(user.id, e.target.value as UserRole)
                         }
                         disabled={loadingId === user.id}
-                        className="bg-stone-50 text-stone-700 border border-stone-200 text-xs rounded-md focus:ring-amber-500 focus:border-amber-500 px-2 py-1 hover:border-stone-300 transition-colors disabled:opacity-50 outline-none"
+                        className="bg-stone-50 text-stone-700 border border-stone-200 text-xs rounded-md focus:ring-amber-500 focus:border-amber-500 px-2 py-1 hover:border-stone-300 transition-colors disabled:opacity-50 outline-none cursor-pointer"
                       >
                         <option value="admin">Admin</option>
                         <option value="editor">Editor</option>
@@ -344,15 +306,13 @@ export default function AdminUserList({
                       onClick={() =>
                         handleStatusChange(user.id, !user.is_active)
                       }
-                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium transition-colors ${
-                        user.is_active
-                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                          : "bg-stone-100 text-stone-800 border border-stone-200"
-                      } ${
-                        user.id !== currentUserId
+                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium transition-colors ${user.is_active
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                        : "bg-stone-100 text-stone-800 border border-stone-200"
+                        } ${user.id !== currentUserId
                           ? "hover:opacity-80 cursor-pointer"
                           : "opacity-50 cursor-not-allowed"
-                      } disabled:opacity-50`}
+                        } disabled:opacity-50`}
                       title={
                         user.id !== currentUserId
                           ? user.is_active
@@ -374,7 +334,7 @@ export default function AdminUserList({
                           title="Xoá người dùng"
                           disabled={loadingId === user.id}
                           onClick={() => handleDelete(user.id)}
-                          className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                          className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 cursor-pointer"
                         >
                           <Trash className="size-4" />
                         </button>
@@ -389,7 +349,7 @@ export default function AdminUserList({
               {users.length === 0 && (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-6 py-8 text-center text-stone-500"
                   >
                     Không tìm thấy người dùng nào.
@@ -411,7 +371,7 @@ export default function AdminUserList({
               </h3>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-stone-400 hover:text-stone-600 transition-colors size-8 flex items-center justify-center hover:bg-stone-100 rounded-full"
+                className="text-stone-400 hover:text-stone-600 transition-colors size-8 flex items-center justify-center hover:bg-stone-100 rounded-full cursor-pointer"
               >
                 <svg
                   className="size-5"
@@ -492,14 +452,14 @@ export default function AdminUserList({
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="btn"
+                  className="px-5 py-2.5 rounded-xl text-sm font-medium text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="btn-primary"
+                  className="px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md text-sm font-medium text-white bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
                 >
                   {isCreating ? "Đang tạo..." : "Tạo người dùng"}
                 </button>

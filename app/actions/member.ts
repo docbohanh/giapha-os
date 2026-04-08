@@ -1,17 +1,79 @@
 "use server";
 
-import { getProfile, getSupabase } from "@/utils/supabase/queries";
+import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-export async function deleteMemberProfile(memberId: string) {
-  const profile = await getProfile();
-  const supabase = await getSupabase();
+export async function applyLineageUpdates(
+  updates: Array<{
+    id: string;
+    new_generation: number | null;
+    new_birth_order: number | null;
+  }>,
+) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
 
   if (profile?.role !== "admin" && profile?.role !== "editor") {
-    return {
-      error: "Từ chối truy cập. Chỉ Admin hoặc Editor mới có quyền xoá hồ sơ.",
-    };
+    throw new Error("Chỉ admin hoặc editor mới có quyền thực hiện thao tác này.");
+  }
+
+  // Update each person individually (server-side, bypasses RLS)
+  const CHUNK = 20;
+  for (let i = 0; i < updates.length; i += CHUNK) {
+    const chunk = updates.slice(i, i + CHUNK);
+    const results = await Promise.all(
+      chunk.map((u) =>
+        supabase
+          .from("persons")
+          .update({
+            generation: u.new_generation,
+            birth_order: u.new_birth_order,
+          })
+          .eq("id", u.id),
+      ),
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error("Lỗi cập nhật: " + failed.error.message);
+  }
+
+  revalidatePath("/dashboard/stats");
+  revalidatePath("/dashboard");
+}
+
+export async function deleteMemberProfile(memberId: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  // 1. Verify Authentication & Authorization
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Vui lòng đăng nhập.");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin" && profile?.role !== "editor") {
+    throw new Error("Từ chối truy cập. Chỉ admin hoặc editor mới có quyền thực hiện thao tác này.");
   }
 
   // 2. Check for existing relationships
@@ -23,14 +85,13 @@ export async function deleteMemberProfile(memberId: string) {
 
   if (relationshipError) {
     console.error("Error checking relationships:", relationshipError);
-    return { error: "Lỗi kiểm tra mối quan hệ gia đình." };
+    throw new Error("Lỗi kiểm tra mối quan hệ gia đình.");
   }
 
   if (relationships && relationships.length > 0) {
-    return {
-      error:
-        "Không thể xoá. Vui lòng xoá hết các mối quan hệ gia đình của người này trước.",
-    };
+    throw new Error(
+      "Không thể xoá. Vui lòng xoá hết các mối quan hệ gia đình của người này trước.",
+    );
   }
 
   // 3. Delete the member
@@ -41,10 +102,327 @@ export async function deleteMemberProfile(memberId: string) {
 
   if (deleteError) {
     console.error("Error deleting person:", deleteError);
-    return { error: "Đã xảy ra lỗi khi xoá hồ sơ." };
+    throw new Error("Đã xảy ra lỗi khi xoá hồ sơ.");
   }
 
   // 4. Revalidate and redirect
+  revalidatePath("/dashboard");
   revalidatePath("/dashboard/members");
-  redirect("/dashboard/members");
+  redirect("/dashboard");
+}
+
+export async function setDefaultRootNode(memberId: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Chỉ admin mới có quyền thực hiện thao tác này.");
+  }
+
+  // Reset tất cả về null
+  const { error: resetError } = await supabase
+    .from("persons")
+    .update({ is_default_root_node: null })
+    .not("id", "is", null);
+
+  if (resetError) throw new Error("Lỗi khi reset gốc cây.");
+
+  // Set người được chọn
+  const { error: setError } = await supabase
+    .from("persons")
+    .update({ is_default_root_node: true })
+    .eq("id", memberId);
+
+  if (setError) throw new Error("Lỗi khi đặt gốc cây.");
+
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+}
+
+export async function setUserRootNode(memberId: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { error } = await supabase
+    .from("user_root_node")
+    .upsert({
+      user_id: user.id,
+      root_node_id: memberId,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: "user_id"
+    });
+
+  if (error) {
+    console.error("Error setting user root node:", error);
+    throw new Error("Lỗi khi đặt gốc cây cá nhân.");
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+}
+
+export async function updateMemberNote(memberId: string, note: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, is_active")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.is_active) {
+    throw new Error("Tài khoản chưa được kích hoạt.");
+  }
+
+  const { error } = await supabase
+    .from("persons")
+    .update({ note: note.trim() || null })
+    .eq("id", memberId);
+
+  if (error) throw new Error("Lỗi khi cập nhật ghi chú: " + error.message);
+
+  revalidatePath(`/dashboard/members/${memberId}`);
+  revalidatePath("/dashboard");
+}
+
+export async function submitEditRequest(personId: string, content: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.is_active) {
+    throw new Error("Tài khoản chưa được kích hoạt.");
+  }
+
+  const { error } = await supabase.from("edit_requests").insert({
+    person_id: personId,
+    user_id: user.id,
+    content: content.trim(),
+    status: "pending",
+  });
+
+  if (error) throw new Error("Lỗi khi gửi yêu cầu: " + error.message);
+
+  revalidatePath("/dashboard/requests");
+  revalidatePath("/dashboard/admin/requests");
+}
+
+export async function approveEditRequest(requestId: string, adminNote?: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Chỉ admin mới có quyền duyệt yêu cầu.");
+  }
+
+  const { error } = await supabase
+    .from("edit_requests")
+    .update({
+      status: "approved",
+      admin_note: adminNote?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", requestId);
+
+  if (error) throw new Error("Lỗi khi duyệt yêu cầu: " + error.message);
+
+  revalidatePath("/dashboard/admin/requests");
+  revalidatePath("/dashboard/requests");
+}
+
+export async function rejectEditRequest(requestId: string, adminNote?: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Chỉ admin mới có quyền từ chối yêu cầu.");
+  }
+
+  const { error } = await supabase
+    .from("edit_requests")
+    .update({
+      status: "rejected",
+      admin_note: adminNote?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", requestId);
+
+  if (error) throw new Error("Lỗi khi từ chối yêu cầu: " + error.message);
+
+  revalidatePath("/dashboard/admin/requests");
+  revalidatePath("/dashboard/requests");
+}
+export async function updateBirthDate(
+  memberId: string,
+  birthDay: number | null,
+  birthMonth: number | null,
+  birthYear: number | null,
+) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin" && profile?.role !== "editor") {
+    throw new Error("Từ chối truy cập. Chỉ admin hoặc editor mới có quyền thực hiện thao tác này.");
+  }
+
+  const { error } = await supabase
+    .from("persons")
+    .update({
+      birth_day: birthDay,
+      birth_month: birthMonth,
+      birth_year: birthYear,
+    })
+    .eq("id", memberId);
+
+  if (error) throw new Error("Lỗi khi cập nhật ngày sinh: " + error.message);
+
+  revalidatePath(`/dashboard/members/${memberId}`);
+  revalidatePath("/dashboard");
+}
+
+export async function updateDeathDate(
+
+  memberId: string,
+  deathDay: number | null,
+  deathMonth: number | null,
+  deathYear: number | null,
+  isDeceased: boolean = false,
+) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin" && profile?.role !== "editor") {
+    throw new Error("Từ chối truy cập. Chỉ admin hoặc editor mới có quyền thực hiện thao tác này.");
+  }
+
+  const { error } = await supabase
+    .from("persons")
+    .update({
+      is_deceased: isDeceased,
+      death_day: deathDay,
+      death_month: deathMonth,
+      death_year: deathYear,
+    })
+    .eq("id", memberId);
+
+  if (error) throw new Error("Lỗi khi cập nhật ngày mất: " + error.message);
+
+  revalidatePath(`/dashboard/members/${memberId}`);
+  revalidatePath("/dashboard");
+}
+
+export async function deleteEditRequest(requestId: string) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vui lòng đăng nhập.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Chỉ admin mới có quyền xoá yêu cầu.");
+  }
+
+  const { error } = await supabase
+    .from("edit_requests")
+    .delete()
+    .eq("id", requestId);
+
+  if (error) throw new Error("Lỗi khi xoá yêu cầu: " + error.message);
+
+  revalidatePath("/dashboard/admin/requests");
+  revalidatePath("/dashboard/requests");
 }

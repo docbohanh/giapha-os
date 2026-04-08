@@ -1,36 +1,43 @@
-import { getAvatarBg } from "@/utils/styleHelprs";
+"use client";
+
 import Image from "next/image";
 
-export const AVATAR_VERSION = "v2";
-
-export default function DefaultAvatar({
-  gender,
-  size = 64,
-}: {
+interface DefaultAvatarProps {
   gender?: string;
-  size?: number;
-}) {
+  isDeceased?: boolean;
+}
+
+export default function DefaultAvatar({ gender, isDeceased = false }: DefaultAvatarProps) {
   if (gender === "male") {
     return (
       <Image
-        unoptimized
-        src={`/avatar/${AVATAR_VERSION}/male.svg`}
-        alt="Male"
-        className={`w-full h-full object-cover ${getAvatarBg(gender)}`}
-        width={size}
-        height={size}
+        src={isDeceased ? "/default-male.jpg" : "/default-male-alive.png"}
+        alt="Nam"
+        width={64}
+        height={64}
+        className="w-full h-full object-cover"
       />
     );
   }
-
+  if (gender === "female") {
+    return (
+      <Image
+        src={isDeceased ? "/default-female.jpg" : "/default-female-alive.png"}
+        alt="Nữ"
+        width={64}
+        height={64}
+        className="w-full h-full object-cover"
+      />
+    );
+  }
+  // Fallback
   return (
     <Image
-      unoptimized
-      src={`/avatar/${AVATAR_VERSION}/female.svg`}
-      alt="Female"
+      src={isDeceased ? "/default-male.jpg" : "/default-male-alive.png"}
+      alt="Mặc định"
+      width={64}
+      height={64}
       className="w-full h-full object-cover"
-      width={size}
-      height={size}
     />
   );
 }

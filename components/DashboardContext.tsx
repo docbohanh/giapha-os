@@ -7,69 +7,74 @@ import { ViewMode } from "./ViewToggle";
 interface DashboardState {
   memberModalId: string | null;
   setMemberModalId: (id: string | null) => void;
-  showCreateMember: boolean;
-  setShowCreateMember: (show: boolean) => void;
   showAvatar: boolean;
   setShowAvatar: (show: boolean) => void;
+  hideSpouses: boolean;
+  setHideSpouses: (hide: boolean) => void;
+  hideFemales: boolean;
+  setHideFemales: (hide: boolean) => void;
+  hideMales: boolean;
+  setHideMales: (hide: boolean) => void;
   view: ViewMode;
   setView: (view: ViewMode) => void;
   rootId: string | null;
   setRootId: (id: string | null) => void;
+  treeStats: { totalMembers: number; generations: number };
+  setTreeStats: (stats: { totalMembers: number; generations: number }) => void;
+  treeScale: number;
+  setTreeScale: (scale: number) => void;
 }
 
 export const DashboardContext = createContext<DashboardState | undefined>(
   undefined,
 );
 
-export function DashboardProvider({
-  children,
-  initialView,
-  initialRootId,
-  initialShowAvatar,
-}: {
-  children: React.ReactNode;
-  initialView?: ViewMode;
-  initialRootId?: string | null;
-  initialShowAvatar?: boolean;
-}) {
+export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
+  const [memberModalId, setMemberModalId] = useState<string | null>(null);
+  const [showAvatar, setShowAvatar] = useState<boolean>(true);
+  const [hideSpouses, setHideSpouses] = useState<boolean>(false);
+  const [hideFemales, setHideFemalesState] = useState<boolean>(false);
+  const [hideMales, setHideMalesState] = useState<boolean>(false);
+  const [view, setViewState] = useState<ViewMode>("tree");
+  const [rootId, setRootIdState] = useState<string | null>(null);
+  const [treeStats, setTreeStats] = useState<{ totalMembers: number; generations: number }>({ totalMembers: 0, generations: 0 });
+  const [treeScale, setTreeScale] = useState<number>(1);
 
-  // Initialize state directly from URL to avoid flash of wrong view
-  const [memberModalId, setMemberModalId] = useState<string | null>(
-    () => searchParams.get("memberModalId") ?? null,
-  );
-  const [showCreateMember, setShowCreateMember] = useState(false);
-  const [showAvatar, setShowAvatar] = useState<boolean>(
-    () => initialShowAvatar ?? searchParams.get("avatar") !== "hide",
-  );
-  const [view, setViewState] = useState<ViewMode>(
-    () => initialView ?? (searchParams.get("view") as ViewMode | null) ?? "list",
-  );
-  const [rootId, setRootIdState] = useState<string | null>(
-    () => initialRootId ?? searchParams.get("rootId") ?? null,
-  );
-
-  // Initialize from URL and listen to Next.js route changes
+  // Initialize non-rootId state once on mount
   useEffect(() => {
-    const syncFromURL = () => {
-      if (typeof window === "undefined") return;
+    const avatarParam = searchParams.get("avatar");
+    setShowAvatar(avatarParam !== "hide");
 
+    const spousesParam = searchParams.get("spouses");
+    setHideSpouses(spousesParam === "hide");
+
+    const femalesParam = searchParams.get("females");
+    setHideFemalesState(femalesParam === "hide");
+
+    const malesParam = searchParams.get("males");
+    setHideMalesState(malesParam === "hide");
+
+    const viewParam = searchParams.get("view") as ViewMode;
+    if (viewParam) setViewState(viewParam);
+
+    // We intentionally ignore memberModalId in the Next.js router loop
+    // to avoid Next.js triggering re-renders on push.
+    // If the URL has it on first load, we grab it from window.location instead
+    if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
-
-      const avatarParam = sp.get("avatar");
-      setShowAvatar(avatarParam !== "hide");
-
-      const viewParam = sp.get("view") as ViewMode;
-      if (viewParam) setViewState(viewParam);
-
-      const rootIdParam = sp.get("rootId");
-      setRootIdState(rootIdParam);
-
       const modalId = sp.get("memberModalId");
-      setMemberModalId(modalId);
-    };
+      if (modalId && !memberModalId) {
+        setMemberModalId(modalId);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    syncFromURL();
+  // Reactively sync rootId whenever URL searchParams change (e.g. router.push with ?rootId=)
+  useEffect(() => {
+    const rootIdParam = searchParams.get("rootId");
+    if (rootIdParam) setRootIdState(rootIdParam);
   }, [searchParams]);
 
   // Sync to URL silently
@@ -94,6 +99,45 @@ export function DashboardProvider({
         newUrl.searchParams.set("avatar", "hide");
       } else {
         newUrl.searchParams.delete("avatar");
+      }
+      window.history.replaceState(null, "", newUrl.toString());
+    }
+  };
+
+  const updateHideSpouses = (hide: boolean) => {
+    setHideSpouses(hide);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      if (hide) {
+        newUrl.searchParams.set("spouses", "hide");
+      } else {
+        newUrl.searchParams.delete("spouses");
+      }
+      window.history.replaceState(null, "", newUrl.toString());
+    }
+  };
+
+  const updateHideFemales = (hide: boolean) => {
+    setHideFemalesState(hide);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      if (hide) {
+        newUrl.searchParams.set("females", "hide");
+      } else {
+        newUrl.searchParams.delete("females");
+      }
+      window.history.replaceState(null, "", newUrl.toString());
+    }
+  };
+
+  const updateHideMales = (hide: boolean) => {
+    setHideMalesState(hide);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      if (hide) {
+        newUrl.searchParams.set("males", "hide");
+      } else {
+        newUrl.searchParams.delete("males");
       }
       window.history.replaceState(null, "", newUrl.toString());
     }
@@ -126,14 +170,22 @@ export function DashboardProvider({
       value={{
         memberModalId,
         setMemberModalId: updateModalId,
-        showCreateMember,
-        setShowCreateMember,
         showAvatar,
         setShowAvatar: updateAvatar,
+        hideSpouses,
+        setHideSpouses: updateHideSpouses,
+        hideFemales,
+        setHideFemales: updateHideFemales,
+        hideMales,
+        setHideMales: updateHideMales,
         view,
         setView,
         rootId,
         setRootId,
+        treeStats,
+        setTreeStats,
+        treeScale,
+        setTreeScale,
       }}
     >
       {children}
@@ -148,15 +200,23 @@ export function useDashboard(): DashboardState {
   if (context === undefined) {
     return {
       memberModalId: null,
-      setMemberModalId: () => {},
-      showCreateMember: false,
-      setShowCreateMember: () => {},
+      setMemberModalId: () => { },
       showAvatar: true,
-      setShowAvatar: () => {},
-      view: "list",
-      setView: () => {},
+      setShowAvatar: () => { },
+      hideSpouses: false,
+      setHideSpouses: () => { },
+      hideFemales: false,
+      setHideFemales: () => { },
+      hideMales: false,
+      setHideMales: () => { },
+      view: "tree",
+      setView: () => { },
       rootId: null,
-      setRootId: () => {},
+      setRootId: () => { },
+      treeStats: { totalMembers: 0, generations: 0 },
+      setTreeStats: () => { },
+      treeScale: 1,
+      setTreeScale: () => { },
     };
   }
   return context;

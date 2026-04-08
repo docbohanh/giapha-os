@@ -1,18 +1,22 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart2, ChevronDown, Database, GitMerge, Network, UserCircle, Users } from "lucide-react";
-import Image from "next/image";
+import { BarChart2, CalendarDays, ChevronDown, ClipboardCheck, ClipboardList, Database, GitMerge, Settings, UserCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import LogoutButton from "./LogoutButton";
-import { useUser } from "./UserProvider";
 
-export default function HeaderMenu() {
-  const { user, isAdmin } = useUser();
-  const userEmail = user?.email;
-  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
-  const displayName = (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? userEmail) as string | undefined;
+interface HeaderMenuProps {
+  isAdmin: boolean;
+  userEmail?: string;
+  displayName?: string;
+  avatarUrl?: string | null;
+  pendingRequestCount?: number;
+}
+
+
+export default function HeaderMenu({ isAdmin, userEmail, displayName, avatarUrl, pendingRequestCount = 0 }: HeaderMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -31,19 +35,35 @@ export default function HeaderMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full hover:bg-stone-100 transition-all duration-200 border border-transparent hover:border-stone-200"
+        className="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full hover:bg-stone-100 transition-all duration-200 cursor-pointer border border-transparent hover:border-stone-200"
       >
-        <div className="size-8 rounded-full bg-linear-to-br from-amber-200 to-amber-100 text-amber-800 flex items-center justify-center font-bold shadow-sm ring-1 ring-amber-300/50 overflow-hidden">
-          {avatarUrl ? (
-            <Image src={avatarUrl} alt={displayName ?? "avatar"} width={32} height={32} className="size-full object-cover" />
-          ) : userEmail ? (
-            userEmail.charAt(0).toUpperCase()
-          ) : (
-            <UserCircle className="size-5" />
+        <div className="relative">
+          <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-200 to-amber-100 text-amber-800 flex items-center justify-center font-bold shadow-sm ring-1 ring-amber-300/50 overflow-hidden">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={displayName || "User"}
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+                unoptimized
+              />
+            ) : displayName ? (
+              displayName.charAt(0).toUpperCase()
+            ) : userEmail ? (
+              userEmail.charAt(0).toUpperCase()
+            ) : (
+              <UserCircle className="w-5 h-5" />
+            )}
+          </div>
+          {isAdmin && pendingRequestCount > 0 && (
+            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-white text-[8px] font-bold border-2 border-white shadow-sm ring-1 ring-amber-600/20">
+              {pendingRequestCount > 9 ? "9+" : pendingRequestCount}
+            </div>
           )}
         </div>
         <ChevronDown
-          className={`size-4 text-stone-500 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+          className={`w-4 h-4 text-stone-500 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -56,101 +76,110 @@ export default function HeaderMenu() {
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-stone-200/60 py-2 z-50 overflow-hidden"
           >
-            <div className="px-4 py-3 border-b border-stone-100 bg-stone-50/50">
-              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-0.5">
-                Tài khoản
-              </p>
-              {displayName && displayName !== userEmail && (
-                <p className="text-sm font-semibold text-stone-900 truncate">{displayName}</p>
+
+            <Link
+              href="/dashboard/profile"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer border-b border-stone-100 mt-1"
+            >
+              {avatarUrl ? (
+                <div className="w-5 h-5 rounded-full overflow-hidden border border-stone-200">
+                  <Image
+                    src={avatarUrl}
+                    alt="Profile"
+                    width={20}
+                    height={20}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <UserCircle className="w-4 h-4" />
               )}
-              <p className="text-xs text-stone-500 truncate">{userEmail}</p>
-            </div>
+              <p>
+                {displayName || (userEmail && userEmail.split("@")[0])}
+              </p>
+            </Link>
 
             <div className="py-1">
+              {/* Feature links visible to all users */}
               <Link
-                href="/dashboard"
+                href="/dashboard/events"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
               >
-                <Network className="size-4" />
-                Bảng điều khiển
+                <CalendarDays className="w-4 h-4" />
+                Sự kiện
               </Link>
-
-              <Link
-                href="/dashboard/members"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors"
-              >
-                <Network className="size-4" />
-                Cây gia phả
-              </Link>
-              
-              <Link
-                href="/dashboard/kinship"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-              >
-                <GitMerge className="size-4" />
-                Tra cứu danh xưng
-              </Link>
-
               <Link
                 href="/dashboard/stats"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-purple-700 hover:bg-purple-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
               >
-                <BarChart2 className="size-4" />
+                <BarChart2 className="w-4 h-4" />
                 Thống kê
               </Link>
-
+              <Link
+                href="/dashboard/kinship"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
+              >
+                <GitMerge className="w-4 h-4" />
+                Tra cứu danh xưng
+              </Link>
+              <hr className="border-stone-100 my-1" />
               {isAdmin && (
                 <>
-                  <div className="px-4 py-2 mt-1">
-                    <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">
-                      Quản trị viên
-                    </p>
-                  </div>
-                  
                   <Link
                     href="/dashboard/users"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
                   >
-                    <Users className="size-4" />
+                    <Settings className="w-4 h-4" />
                     Quản lý Người dùng
                   </Link>
-
-                  <Link
-                    href="/dashboard/lineage"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-indigo-700 hover:bg-indigo-50 transition-colors"
-                  >
-                    <Network className="size-4" />
-                    Thứ tự gia phả
-                  </Link>
-
                   <Link
                     href="/dashboard/data"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-teal-700 hover:bg-teal-50 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
                   >
-                    <Database className="size-4" />
+                    <Database className="w-4 h-4" />
                     Sao lưu & Phục hồi
+                  </Link>
+                  <Link
+                    href="/dashboard/admin/requests"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
+                  >
+                    <ClipboardCheck className="w-4 h-4" />
+                    Duyệt yêu cầu
+                    {pendingRequestCount > 0 && (
+                      <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center leading-none">
+                        {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
+                      </span>
+                    )}
                   </Link>
                 </>
               )}
-
-              <div className="h-px bg-stone-100 my-1 mx-4" />
-
+              {!isAdmin && (
+                <Link
+                  href="/dashboard/requests"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer "
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  Yêu cầu chỉnh sửa
+                </Link>
+              )}
               {/* <Link
-                href="/about"
+                href="/dashboard/profile"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer border-t border-stone-100 mt-1"
               >
-                <Info className="size-4" />
-                Giới thiệu
+                <UserCircle className="w-4 h-4" />
+                Thông tin cá nhân
               </Link> */}
-
+              <hr className="border-stone-100" />
               <LogoutButton />
             </div>
           </motion.div>
