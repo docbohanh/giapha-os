@@ -262,6 +262,7 @@ export default function FamilyTree({
   return (
     <div
       ref={containerRef}
+      id="tree-scroll-container"
       className={`w-full overflow-auto bg-stone-50 relative ${isPressed ? "cursor-grabbing" : "cursor-grab"}`}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

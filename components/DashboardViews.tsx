@@ -8,8 +8,8 @@ import MindmapTree from "@/components/MindmapTree";
 import RootSelector from "@/components/RootSelector";
 import { Person, Relationship } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
-import { Filter, Image as ImageIcon, ZoomIn, ZoomOut } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Crosshair, Filter, Image as ImageIcon, ZoomIn, ZoomOut } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface DashboardViewsProps {
   persons: Person[];
@@ -40,6 +40,23 @@ export default function DashboardViews({
 
   const [showFilters, setShowFilters] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
+
+  const handleCenter = useCallback(() => {
+    const el = document.getElementById("tree-scroll-container");
+    if (!el) return;
+    const inner = el.querySelector("#export-container");
+    if (inner) {
+      const innerRect = inner.getBoundingClientRect();
+      const containerRect = el.getBoundingClientRect();
+      el.scrollLeft +=
+        innerRect.left +
+        innerRect.width / 2 -
+        (containerRect.left + containerRect.width / 2);
+    } else {
+      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+    }
+  }, []);
 
   const MIN_SCALE = 0.3;
   const MAX_SCALE = 2;
@@ -138,7 +155,7 @@ export default function DashboardViews({
 
   return (
     <>
-      <main className="flex-1 overflow-auto bg-stone-50/50 flex flex-col">
+      <main ref={containerRef} className="flex-1 overflow-auto bg-stone-50/50 flex flex-col">
         {isTreeView && persons.length > 0 && activeRootId && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full flex flex-wrap items-center justify-center gap-3 relative z-20">
             {/* Root Selector */}
@@ -170,6 +187,15 @@ export default function DashboardViews({
                 <ZoomIn className="size-4" />
               </button>
             </div>
+
+            {/* Center Button */}
+            <button
+              onClick={handleCenter}
+              className="flex items-center justify-center size-10 rounded-full bg-white/80 backdrop-blur-md shadow-sm border border-stone-200/60 text-stone-600 hover:bg-white hover:text-stone-900 hover:shadow-md transition-all"
+              title="Căn giữa"
+            >
+              <Crosshair className="size-4" />
+            </button>
 
             {/* Filter Dropdown */}
             <div className="relative" ref={filtersRef}>
