@@ -397,7 +397,12 @@ export default function MemberDetailContent({
                 {(() => {
                   const ageData = calculateAge(
                     person.birth_year,
-                    person.death_year,
+                    person.birth_month ?? null,
+                    person.birth_day ?? null,
+                    person.death_year ?? null,
+                    person.death_month ?? null,
+                    person.death_day ?? null,
+                    person.is_deceased ?? false,
                   );
                   if (!ageData) return null;
                   return (

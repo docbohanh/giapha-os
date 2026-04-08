@@ -117,14 +117,14 @@ export default function ExportButton() {
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer text-left"
             >
               <FileImage className="w-4 h-4" />
-              Lưu thành Ảnh (PNG)
+              Lưu Ảnh (PNG)
             </button>
             <button
               onClick={() => handleExport("pdf")}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer text-left"
             >
               <FileText className="w-4 h-4" />
-              Lưu thành PDF
+              Lưu PDF
             </button>
           </motion.div>
         )}
