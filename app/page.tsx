@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import GuestTreeSection from "@/components/GuestTreeSection";
 import LandingHero from "@/components/LandingHero";
 import Launchpad from "@/components/Launchpad";
+import { DashboardProvider } from "@/components/DashboardContext";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import config from "./config";
@@ -58,13 +59,17 @@ export default async function HomePage() {
           </div>
         </Suspense>
       </main>
-      <div className="relative z-1 w-full mt-2 md:mt-4 px-4 pb-16">        
-        <GuestTreeSection
-          persons={persons}
-          relationships={relationships}
-          isLoggedIn={isLoggedIn}
-          userRootId={userRootId}
-        />
+      <div className="relative z-1 w-full mt-2 md:mt-4 px-4 pb-16">
+        <Suspense fallback={null}>
+          <DashboardProvider>
+            <GuestTreeSection
+              persons={persons}
+              relationships={relationships}
+              isLoggedIn={isLoggedIn}
+              userRootId={userRootId}
+            />
+          </DashboardProvider>
+        </Suspense>
       </div>
     </div>
   );

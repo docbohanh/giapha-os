@@ -1,9 +1,9 @@
 "use client";
 
 import { Person, Relationship } from "@/types";
-import { ArrowRight, ListTree, Network, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowRight, Crosshair, ListTree, Network, ZoomIn, ZoomOut } from "lucide-react";
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import FamilyTree from "./FamilyTree";
 import LoginModal from "./LoginModal";
 import MindmapTree from "./MindmapTree";
@@ -30,6 +30,23 @@ export default function GuestTreeSection({
     const [view, setView] = useState<"tree" | "mindmap">("tree");
     const [scale, setScale] = useState(1);
     const [loginOpen, setLoginOpen] = useState(false);
+
+    const handleCenter = useCallback(() => {
+        const el = document.getElementById("tree-scroll-container");
+        if (!el) return;
+        const inner = el.querySelector("#export-container");
+        if (inner) {
+            const innerRect = inner.getBoundingClientRect();
+            const containerRect = el.getBoundingClientRect();
+            el.scrollLeft +=
+                innerRect.left +
+                innerRect.width / 2 -
+                (containerRect.left + containerRect.width / 2);
+        } else {
+            el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+        }
+        el.scrollTop = 0;
+    }, []);
     const MIN_SCALE = 0.3;
     const MAX_SCALE = 2;
     const zoomIn = () => setScale((s) => Math.min(MAX_SCALE, +(s + 0.1).toFixed(2)));
@@ -153,7 +170,13 @@ export default function GuestTreeSection({
                         );
                     })}
                 </div>
-
+                <button
+                    onClick={handleCenter}
+                    className="flex items-center justify-center size-10 rounded-full bg-white/80 backdrop-blur-md shadow-sm border border-stone-200/60 text-stone-600 hover:bg-white hover:text-stone-900 hover:shadow-md transition-all"
+                    title="Căn giữa"
+                >
+                    <Crosshair className="size-4" />
+                </button>
                 {/* <div className="flex items-center bg-white/80 backdrop-blur-md shadow-sm border border-stone-200/60 rounded-full p-1 gap-0.5">
                     <button
                         onClick={zoomOut}
@@ -200,7 +223,7 @@ export default function GuestTreeSection({
             <div className="relative rounded-2xl border border-stone-200/60 bg-white/60 backdrop-blur-md overflow-hidden">
 
 
-                <div className="guest-scroll overflow-auto min-h-[480px] max-h-[1280px] overscroll-contain">
+                <div id="guest-scroll-container" className="guest-scroll overflow-auto min-h-[480px] max-h-[1280px] overscroll-contain">
                     {view === "tree" ? (
                         <div style={{ transform: `scale(${scale})`, transformOrigin: "top center", transition: "transform 0.1s" }}>
                             <FamilyTree
