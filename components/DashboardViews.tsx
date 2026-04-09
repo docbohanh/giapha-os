@@ -175,7 +175,6 @@ export default function DashboardViews({
       ngaySinh: string;
       ngayMat: string;
       daMat: string;
-      dauRe: string;
       voChong: string;
       ghiChu: string;
       ngheNghiep: string;
@@ -206,8 +205,7 @@ export default function DashboardViews({
         gender: person.gender === "male" ? "Nam" : person.gender === "female" ? "Nữ" : "Khác",
         ngaySinh: formatDate(person.birth_day, person.birth_month, person.birth_year),
         ngayMat: formatDate(person.death_day, person.death_month, person.death_year),
-        daMat: person.is_deceased ? "Có" : "",
-        dauRe: person.is_in_law ? "Có" : "",
+        daMat: person.is_deceased ? "Đã mất" : "",
         voChong: spouseNames,
         ghiChu: person.note ?? "",
         ngheNghiep: person.occupation ?? "",
@@ -240,8 +238,7 @@ export default function DashboardViews({
       row["Giới tính"] = r.gender;
       row["Ngày sinh"] = r.ngaySinh;
       row["Ngày mất"] = r.ngayMat;
-      row["Đã mất"] = r.daMat;
-      row["Dâu/Rể"] = r.dauRe;
+      row["Trạng thái"] = r.daMat;
       row["Vợ/Chồng"] = r.voChong;
       row["Ghi chú"] = r.ghiChu;
       row["Nghề nghiệp"] = r.ngheNghiep;
