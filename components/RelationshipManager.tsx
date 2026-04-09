@@ -4,6 +4,23 @@ import { DashboardContext, useDashboard } from "@/components/DashboardContext";
 import { Person, RelationshipType } from "@/types";
 import { formatDisplayDate } from "@/utils/dateHelpers";
 import { createClient } from "@/utils/supabase/client";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -13,6 +30,71 @@ interface RelationshipManagerProps {
   personId: string;
   isAdmin: boolean;
   personGender: string; // Passed down to calculate default spouse gender
+}
+
+interface SortableChildItemProps {
+  rel: EnrichedRelationship;
+  onPersonClick: (id: string) => void;
+}
+
+function SortableChildItem({ rel, onPersonClick }: SortableChildItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rel.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 bg-white rounded-xl border px-2 py-1.5 shadow-xs transition-shadow ${isDragging ? "border-amber-300 shadow-md opacity-80" : "border-stone-200"}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1.5 text-stone-300 hover:text-stone-500 touch-none"
+        title="Kéo để sắp xếp"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <circle cx="4.5" cy="3.5" r="1.2" />
+          <circle cx="9.5" cy="3.5" r="1.2" />
+          <circle cx="4.5" cy="7" r="1.2" />
+          <circle cx="9.5" cy="7" r="1.2" />
+          <circle cx="4.5" cy="10.5" r="1.2" />
+          <circle cx="9.5" cy="10.5" r="1.2" />
+        </svg>
+      </button>
+      <button
+        onClick={() => onPersonClick(rel.targetPerson.id)}
+        className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-opacity"
+      >
+        <div
+          className={`h-8 w-8 rounded-[8px] flex items-center justify-center text-xs text-white overflow-hidden shrink-0
+            ${rel.targetPerson.gender === "male" ? "bg-sky-700" : rel.targetPerson.gender === "female" ? "bg-rose-700" : "bg-stone-500"}`}
+        >
+          {rel.targetPerson.avatar_url ? (
+            <Image
+              unoptimized
+              src={rel.targetPerson.avatar_url}
+              alt={rel.targetPerson.full_name}
+              className="h-full w-full object-cover"
+              width={32}
+              height={32}
+            />
+          ) : (
+            <DefaultAvatar gender={rel.targetPerson.gender} isDeceased={rel.targetPerson.is_deceased} />
+          )}
+        </div>
+        <span className="text-stone-900 font-medium text-sm">{rel.targetPerson.full_name}</span>
+        {rel.type === "adopted_child" && (
+          <span className="text-xs text-stone-400 italic">(Con nuôi)</span>
+        )}
+      </button>
+    </li>
+  );
 }
 
 interface EnrichedRelationship {
@@ -85,6 +167,52 @@ export default function RelationshipManager({
   const [newParentName, setNewParentName] = useState("");
   const [newParentGender, setNewParentGender] = useState<"male" | "female">("male");
   const [newParentBirthYear, setNewParentBirthYear] = useState("");
+
+  // Sort Children State
+  const [isSortingChildren, setIsSortingChildren] = useState(false);
+  const [sortedChildIds, setSortedChildIds] = useState<string[]>([]);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const enterSortMode = () => {
+    setSortedChildIds(groupByType("child").map((r) => r.id));
+    setIsSortingChildren(true);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setSortedChildIds((ids) => {
+        const oldIndex = ids.indexOf(active.id as string);
+        const newIndex = ids.indexOf(over.id as string);
+        return arrayMove(ids, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const saveChildOrder = async () => {
+    setSavingOrder(true);
+    try {
+      await Promise.all(
+        sortedChildIds.map((relId, i) =>
+          supabase
+            .from("relationships")
+            .update({ sort_order: i * 10 })
+            .eq("id", relId),
+        ),
+      );
+      setIsSortingChildren(false);
+      fetchRelationships();
+    } catch (err) {
+      console.error("Failed to save order:", err);
+    } finally {
+      setSavingOrder(false);
+    }
+  };
 
   // Fetch relationships
   const fetchRelationships = useCallback(async () => {
@@ -490,53 +618,6 @@ export default function RelationshipManager({
     }
   };
 
-  const handleReorderChild = async (relId: string, direction: "up" | "down") => {
-    const children = groupByType("child");
-
-    // If any child lacks sort_order, initialize all sequentially first (gap of 10)
-    const hasNulls = children.some((c) => c.sort_order == null);
-    if (hasNulls) {
-      try {
-        await Promise.all(
-          children.map((child, i) =>
-            supabase
-              .from("relationships")
-              .update({ sort_order: i * 10 })
-              .eq("id", child.id),
-          ),
-        );
-        fetchRelationships();
-      } catch (err) {
-        console.error("Failed to initialize sort_order:", err);
-      }
-      return; // User clicks again to actually move
-    }
-
-    const idx = children.findIndex((r) => r.id === relId);
-    if (idx < 0) return;
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= children.length) return;
-
-    const current = children[idx];
-    const swap = children[swapIdx];
-
-    try {
-      await Promise.all([
-        supabase
-          .from("relationships")
-          .update({ sort_order: swap.sort_order })
-          .eq("id", current.id),
-        supabase
-          .from("relationships")
-          .update({ sort_order: current.sort_order })
-          .eq("id", swap.id),
-      ]);
-      fetchRelationships();
-    } catch (err) {
-      console.error("Reorder failed:", err);
-    }
-  };
-
   const handleDelete = async (relId: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa mối quan hệ này?")) return;
     try {
@@ -573,6 +654,11 @@ export default function RelationshipManager({
       </div>
     );
 
+  // Build the sorted child list for drag mode
+  const sortedChildRels = sortedChildIds
+    .map((id) => relationships.find((r) => r.id === id))
+    .filter(Boolean) as EnrichedRelationship[];
+
   return (
     <div className="space-y-6">
       {/* List Sections */}
@@ -584,7 +670,7 @@ export default function RelationshipManager({
         if (group === "child") title = "Con cái";
         if (group === "child_in_law") title = "Con dâu / Con rể";
 
-        if (items.length === 0 && !isAdmin) return null; // Hide empty sections for members? Or show empty state?
+        if (items.length === 0 && !isAdmin) return null;
 
         return (
           <div
@@ -593,8 +679,46 @@ export default function RelationshipManager({
           >
             <h4 className="font-bold text-stone-700 mb-3 flex justify-between items-center text-sm uppercase tracking-wide">
               {title}
+              {group === "child" && isAdmin && items.length > 1 && !isSortingChildren && (
+                <button
+                  onClick={enterSortMode}
+                  className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg px-2.5 py-1 transition-colors cursor-pointer normal-case tracking-normal"
+                >
+                  Sắp xếp
+                </button>
+              )}
+              {group === "child" && isSortingChildren && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setIsSortingChildren(false)}
+                    disabled={savingOrder}
+                    className="text-[11px] font-semibold text-stone-500 hover:text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-lg px-2.5 py-1 transition-colors cursor-pointer normal-case tracking-normal disabled:opacity-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={saveChildOrder}
+                    disabled={savingOrder}
+                    className="text-[11px] font-semibold text-white bg-amber-600 hover:bg-amber-700 border border-amber-700 rounded-lg px-2.5 py-1 transition-colors cursor-pointer normal-case tracking-normal disabled:opacity-60"
+                  >
+                    {savingOrder ? "Đang lưu..." : "Lưu thứ tự"}
+                  </button>
+                </div>
+              )}
             </h4>
-            {items.length > 0 ? (
+
+            {/* Drag-and-drop mode for children */}
+            {group === "child" && isSortingChildren ? (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={sortedChildIds} strategy={verticalListSortingStrategy}>
+                  <ul className="space-y-2">
+                    {sortedChildRels.map((rel) => (
+                      <SortableChildItem key={rel.id} rel={rel} onPersonClick={handlePersonClick} />
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
+            ) : items.length > 0 ? (
               <ul className="space-y-3">
                 {items.map((rel) => (
                   <li
@@ -640,31 +764,7 @@ export default function RelationshipManager({
                     </button>
                     {isAdmin && rel.direction !== "child_in_law" && (
                       <div className="flex items-center gap-1 ml-2">
-                        {/* Reorder buttons — only for children */}
-                        {rel.direction === "child" && (() => {
-                          const children = groupByType("child");
-                          const idx = children.findIndex((r) => r.id === rel.id);
-                          return (
-                            <div className="flex flex-col gap-0.5">
-                              <button
-                                onClick={() => handleReorderChild(rel.id, "up")}
-                                disabled={idx === 0}
-                                className="text-stone-300 hover:text-amber-600 hover:bg-amber-50 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
-                                title="Lên"
-                              >
-                                ▲
-                              </button>
-                              <button
-                                onClick={() => handleReorderChild(rel.id, "down")}
-                                disabled={idx === children.length - 1}
-                                className="text-stone-300 hover:text-amber-600 hover:bg-amber-50 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
-                                title="Xuống"
-                              >
-                                ▼
-                              </button>
-                            </div>
-                          );
-                        })()}
+                        {/* Delete button only — reorder via drag sort mode */}
 
                         {/* Delete button */}
                         <button
