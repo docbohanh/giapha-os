@@ -153,6 +153,138 @@ export default function DashboardViews({
 
   const isTreeView = currentView === "tree" || currentView === "mindmap";
 
+  const handleExportExcel = (
+    pMap: Map<string, Person>,
+    rels: Relationship[],
+    rootList: Person[],
+  ) => {
+    const formatDate = (day: number | null, month: number | null, year: number | null): string => {
+      if (year && month && day) return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
+      if (year && month) return `${String(month).padStart(2, "0")}/${year}`;
+      if (year) return String(year);
+      return "";
+    };
+
+    // Intermediate record before we know max gen
+    interface PersonRow {
+      id: string;
+      parentId: string | null;
+      gen: number;
+      name: string;
+      gender: string;
+      ngaySinh: string;
+      ngayMat: string;
+      daMat: string;
+      dauRe: string;
+      voChong: string;
+      ghiChu: string;
+      ngheNghiep: string;
+      noiO: string;
+      sdt: string;
+    }
+
+    const personRows: PersonRow[] = [];
+
+    const traverse = (personId: string, parentId: string | null) => {
+      const person = pMap.get(personId);
+      if (!person) return;
+
+      const spouseNames = rels
+        .filter((r) => r.type === "marriage" && (r.person_a === personId || r.person_b === personId))
+        .map((r) => {
+          const sid = r.person_a === personId ? r.person_b : r.person_a;
+          return pMap.get(sid)?.full_name.toUpperCase() ?? "";
+        })
+        .filter(Boolean)
+        .join(", ");
+
+      personRows.push({
+        id: person.id,
+        parentId,
+        gen: person.generation ?? 0,
+        name: person.full_name.toUpperCase(),
+        gender: person.gender === "male" ? "Nam" : person.gender === "female" ? "Nữ" : "Khác",
+        ngaySinh: formatDate(person.birth_day, person.birth_month, person.birth_year),
+        ngayMat: formatDate(person.death_day, person.death_month, person.death_year),
+        daMat: person.is_deceased ? "Có" : "",
+        dauRe: person.is_in_law ? "Có" : "",
+        voChong: spouseNames,
+        ghiChu: person.note ?? "",
+        ngheNghiep: person.occupation ?? "",
+        noiO: person.current_residence ?? "",
+        sdt: person.phone_number ?? "",
+      });
+
+      const children = rels
+        .filter((r) => (r.type === "biological_child" || r.type === "adopted_child") && r.person_a === personId)
+        .map((r) => pMap.get(r.person_b))
+        .filter(Boolean) as Person[];
+
+      children.forEach((c) => traverse(c.id, personId));
+    };
+
+    rootList.forEach((root) => traverse(root.id, null));
+
+    const minGen = personRows.reduce((m, r) => Math.min(m, r.gen), Infinity);
+    const maxGen = personRows.reduce((m, r) => Math.max(m, r.gen), 0);
+    const genCols = Array.from({ length: maxGen - minGen + 1 }, (_, i) => `Đời ${minGen + i}`);
+
+    const rows = personRows.map((r) => {
+      const row: Record<string, string | number | null> = {
+        "ID": r.id,
+        "Parent ID": r.parentId ?? "",
+      };
+      genCols.forEach((col, i) => {
+        row[col] = r.gen === minGen + i ? r.name : "";
+      });
+      row["Giới tính"] = r.gender;
+      row["Ngày sinh"] = r.ngaySinh;
+      row["Ngày mất"] = r.ngayMat;
+      row["Đã mất"] = r.daMat;
+      row["Dâu/Rể"] = r.dauRe;
+      row["Vợ/Chồng"] = r.voChong;
+      row["Ghi chú"] = r.ghiChu;
+      row["Nghề nghiệp"] = r.ngheNghiep;
+      row["Nơi ở hiện tại"] = r.noiO;
+      row["Số điện thoại"] = r.sdt;
+      return row;
+    });
+
+    import("xlsx").then((XLSX) => {
+      const ws = XLSX.utils.json_to_sheet(rows);
+
+      const allKeys = Object.keys(rows[0] ?? {});
+      const hiddenCols = new Set(["ID", "Parent ID"]);
+
+      // Auto column width, hidden cols set to 0
+      ws["!cols"] = allKeys.map((key) =>
+        hiddenCols.has(key)
+          ? { wch: 0, hidden: true }
+          : { wch: Math.max(key.length, ...rows.map((r) => String(r[key] ?? "").length)) + 2 }
+      );
+
+      // Black borders on all cells
+      const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1");
+      const blackBorder = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } },
+      };
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const addr = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[addr]) ws[addr] = { t: "z", v: "" };
+          ws[addr].s = { border: blackBorder };
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Gia Phả");
+      XLSX.writeFile(wb, `giapha-${new Date().toISOString().split("T")[0]}.xlsx`, { bookType: "xlsx", cellStyles: true });
+    });
+  };
+
   const handleExportJSON = (
     pMap: Map<string, Person>,
     rels: Relationship[],
@@ -330,7 +462,7 @@ export default function DashboardViews({
             </div>
 
             {/* Export Button — chỉ hiện khi canEdit */}
-            {canEdit && <ExportButton onExportJSON={() => handleExportJSON(personsMap, relationships, roots)} />}
+            {canEdit && <ExportButton onExportJSON={() => handleExportJSON(personsMap, relationships, roots)} onExportExcel={() => handleExportExcel(personsMap, relationships, roots)} />}
           </div>
         )}
 

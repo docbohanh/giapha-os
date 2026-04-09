@@ -3,14 +3,15 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { toJpeg, toPng } from "html-to-image";
 import jsPDF from "jspdf";
-import { Braces, Download, FileImage, FileText, Loader2 } from "lucide-react";
+import { Braces, Download, FileImage, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface ExportButtonProps {
   onExportJSON?: () => void;
+  onExportExcel?: () => void;
 }
 
-export default function ExportButton({ onExportJSON }: ExportButtonProps) {
+export default function ExportButton({ onExportJSON, onExportExcel }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -130,6 +131,15 @@ export default function ExportButton({ onExportJSON }: ExportButtonProps) {
               <FileText className="w-4 h-4" />
               Lưu PDF
             </button>
+            {onExportExcel && (
+              <button
+                onClick={() => { setShowMenu(false); onExportExcel(); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer text-left"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Lưu Excel
+              </button>
+            )}
             {onExportJSON && (
               <button
                 onClick={() => { setShowMenu(false); onExportJSON(); }}
