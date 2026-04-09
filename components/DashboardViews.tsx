@@ -153,6 +153,67 @@ export default function DashboardViews({
 
   const isTreeView = currentView === "tree" || currentView === "mindmap";
 
+  const handleExportJSON = (
+    pMap: Map<string, Person>,
+    rels: Relationship[],
+    rootList: Person[],
+  ) => {
+    const formatDate = (day: number | null, month: number | null, year: number | null): string => {
+      if (year && month && day) return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
+      if (year && month) return `${String(month).padStart(2, "0")}/${year}`;
+      if (year) return String(year);
+      return "";
+    };
+
+    const buildNode = (personId: string, gen: number): object => {
+      const person = pMap.get(personId);
+      if (!person) return {};
+
+      const spouseNames = rels
+        .filter((r) => r.type === "marriage" && (r.person_a === personId || r.person_b === personId))
+        .map((r) => {
+          const sid = r.person_a === personId ? r.person_b : r.person_a;
+          return pMap.get(sid)?.full_name.toUpperCase() ?? "";
+        })
+        .filter(Boolean)
+        .join(", ");
+
+      const children = rels
+        .filter((r) => (r.type === "biological_child" || r.type === "adopted_child") && r.person_a === personId)
+        .map((r) => pMap.get(r.person_b))
+        .filter(Boolean) as Person[];
+
+      const node: Record<string, unknown> = {
+        gen,
+        ho_ten: person.full_name.toUpperCase(),
+        gioi_tinh: person.gender === "male" ? "Nam" : person.gender === "female" ? "Nữ" : "Khác",
+        ngay_sinh: formatDate(person.birth_day, person.birth_month, person.birth_year),
+      };
+
+      const ngayMat = formatDate(person.death_day, person.death_month, person.death_year);
+      if (ngayMat) node.ngay_mat = ngayMat;
+      if (person.note) node.ghi_chu = person.note;
+      if (spouseNames) node.vo = spouseNames;
+      if (children.length > 0) node.children = children.map((c) => buildNode(c.id, gen + 1));
+
+      return node;
+    };
+
+    const data = rootList.length === 1
+      ? buildNode(rootList[0].id, 1)
+      : rootList.map((r) => buildNode(r.id, 1));
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `giapha-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <main ref={containerRef} className="flex-1 overflow-auto bg-stone-50/50 flex flex-col">
@@ -269,7 +330,7 @@ export default function DashboardViews({
             </div>
 
             {/* Export Button — chỉ hiện khi canEdit */}
-            {canEdit && <ExportButton />}
+            {canEdit && <ExportButton onExportJSON={() => handleExportJSON(personsMap, relationships, roots)} />}
           </div>
         )}
 
